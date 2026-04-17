@@ -40,15 +40,21 @@ func NewClient(notebookPath string) *Client {
 	return &Client{notebookPath: notebookPath}
 }
 
+func (c *Client) run(args ...string) ([]byte, error) {
+	cmd := exec.Command("zk", args...)
+	cmd.Dir = c.notebookPath
+	return cmd.Output()
+}
+
 func (c *Client) List(query string, tags []string) ([]Note, error) {
-	args := []string{"list", "--format", "json", "--notebook", c.notebookPath}
+	args := []string{"list", "--format", "json"}
 	if query != "" {
 		args = append(args, "--match", query)
 	}
 	for _, t := range tags {
 		args = append(args, "--tag", t)
 	}
-	out, err := exec.Command("zk", args...).Output()
+	out, err := c.run(args...)
 	if err != nil {
 		return nil, fmt.Errorf("zk list: %w", err)
 	}
@@ -60,8 +66,7 @@ func (c *Client) List(query string, tags []string) ([]Note, error) {
 }
 
 func (c *Client) TagList() ([]Tag, error) {
-	args := []string{"tag", "list", "--format", "json", "--notebook", c.notebookPath}
-	out, err := exec.Command("zk", args...).Output()
+	out, err := c.run("tag", "list", "--format", "json")
 	if err != nil {
 		return nil, fmt.Errorf("zk tag list: %w", err)
 	}

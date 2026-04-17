@@ -4,26 +4,37 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
-func fakeZK(t *testing.T, output string) func() {
+// fakeZKWithDir installs a fake zk binary that always prints output, and returns
+// the notebook directory (to use as the client path) and a cleanup func.
+func fakeZKWithDir(t *testing.T, output string) (notebookDir string, cleanup func()) {
 	t.Helper()
-	dir := t.TempDir()
-	outFile := filepath.Join(dir, "zk.out")
+	binDir := t.TempDir()
+	notebookDir = t.TempDir()
+	outFile := filepath.Join(binDir, "zk.out")
 	if err := os.WriteFile(outFile, []byte(output), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	script := filepath.Join(dir, "zk")
+	script := filepath.Join(binDir, "zk")
 	if err := os.WriteFile(script, []byte("#!/bin/sh\ncat "+outFile), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	old := os.Getenv("PATH")
-	os.Setenv("PATH", dir+":"+old)
-	return func() { os.Setenv("PATH", old) }
+	os.Setenv("PATH", binDir+":"+old)
+	return notebookDir, func() { os.Setenv("PATH", old) }
+}
+
+// fakeZK is a convenience wrapper for tests that don't need the notebook dir.
+func fakeZK(t *testing.T, output string) func() {
+	t.Helper()
+	_, cleanup := fakeZKWithDir(t, output)
+	return cleanup
 }
 
 func TestListReturnsNotes(t *testing.T) {
@@ -40,10 +51,10 @@ func TestListReturnsNotes(t *testing.T) {
 		},
 	}
 	raw, _ := json.Marshal(notes)
-	cleanup := fakeZK(t, string(raw))
+	notebookDir, cleanup := fakeZKWithDir(t, string(raw))
 	defer cleanup()
 
-	c := zk.NewClient("/nb")
+	c := zk.NewClient(notebookDir)
 	got, err := c.List("", nil)
 	if err != nil {
 		t.Fatalf("List() error: %v", err)
@@ -74,14 +85,16 @@ func TestListPassesQueryAndTags(t *testing.T) {
 	dir := t.TempDir()
 	script := filepath.Join(dir, "zk")
 	argsFile := filepath.Join(dir, "args.txt")
-	if err := os.WriteFile(script, []byte("#!/bin/sh\necho \"$@\" > "+argsFile+"\necho '[]'"), 0o755); err != nil {
+	pwdFile := filepath.Join(dir, "pwd.txt")
+	if err := os.WriteFile(script, []byte("#!/bin/sh\necho \"$@\" > "+argsFile+"\npwd > "+pwdFile+"\necho '[]'"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	old := os.Getenv("PATH")
 	os.Setenv("PATH", dir+":"+old)
 	defer os.Setenv("PATH", old)
 
-	c := zk.NewClient("/nb")
+	notebook := t.TempDir()
+	c := zk.NewClient(notebook)
 	_, err := c.List("golang", []string{"go", "concurrency"})
 	if err != nil {
 		t.Fatalf("List() error: %v", err)
@@ -89,10 +102,20 @@ func TestListPassesQueryAndTags(t *testing.T) {
 
 	got, _ := os.ReadFile(argsFile)
 	args := string(got)
-	for _, want := range []string{"--match", "golang", "--tag", "go", "--tag", "concurrency", "--format", "json", "--notebook", "/nb"} {
+	for _, want := range []string{"--match", "golang", "--tag", "go", "--tag", "concurrency", "--format", "json"} {
 		if !containsStr(args, want) {
 			t.Errorf("args %q missing %q", args, want)
 		}
+	}
+	if containsStr(args, "--notebook") {
+		t.Errorf("args must not contain --notebook flag, got: %s", args)
+	}
+
+	gotPWD, _ := os.ReadFile(pwdFile)
+	wantPWD := strings.TrimSpace(notebook)
+	gotPWDStr := strings.TrimSpace(string(gotPWD))
+	if gotPWDStr != wantPWD {
+		t.Errorf("cmd.Dir = %q, want %q", gotPWDStr, wantPWD)
 	}
 }
 
@@ -122,10 +145,10 @@ func TestTagList(t *testing.T) {
 		{"id": 2, "kind": "tag", "name": "database", "noteCount": 18},
 	}
 	raw, _ := json.Marshal(tags)
-	cleanup := fakeZK(t, string(raw))
+	notebookDir, cleanup := fakeZKWithDir(t, string(raw))
 	defer cleanup()
 
-	c := zk.NewClient("/nb")
+	c := zk.NewClient(notebookDir)
 	got, err := c.TagList()
 	if err != nil {
 		t.Fatalf("TagList() error: %v", err)
