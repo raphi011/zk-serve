@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{if .Title}}{{.Title}} — zk{{else}}zk{{end}}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="/static/htmx.min.js" defer></script>
+  <script src="/static/mermaid.min.js" defer></script>
+  <script>
+    (function() {
+      var stored = localStorage.getItem('zk-theme');
+      var pref = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', pref);
+    })();
+  </script>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="btn-icon btn-hamburger" id="hamburger" aria-label="Toggle sidebar">☰</button>
+  <a class="topbar__brand" href="/">zk</a>
+  <div class="topbar__spacer"></div>
+  <div class="topbar__search">
+    <span class="htmx-indicator" id="search-indicator">…</span>
+    <input
+      type="search"
+      name="q"
+      placeholder="Search notes…"
+      autocomplete="off"
+      hx-get="/search"
+      hx-trigger="input changed delay:300ms, search"
+      hx-target="#note-list"
+      hx-include="[name='tags']"
+      hx-indicator="#search-indicator"
+      value="{{.Query}}"
+    />
+  </div>
+  <button class="btn-icon" id="theme-toggle" aria-label="Toggle theme">
+    <span id="theme-icon">☾</span>
+  </button>
+</header>
+
+<div class="layout">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <nav class="sidebar" id="sidebar">
+    <p class="sidebar__section-title">Tags</p>
+    <ul class="tag-list">
+      {{range .Tags}}
+      <li class="tag-list__item{{if $.IsActiveTag .Name}} active{{end}}"
+          hx-get="/search"
+          hx-vals='{"tags": "{{.Name}}", "q": "{{$.Query}}"}'
+          hx-target="#note-list">
+        <span class="tag-list__name">{{.Name}}</span>
+        <span class="tag-list__count">{{.NoteCount}}</span>
+      </li>
+      {{end}}
+    </ul>
+
+    <hr class="sidebar__divider" />
+
+    <p class="sidebar__section-title">Notes</p>
+    <input type="hidden" name="tags" value="{{.ActiveTag}}" />
+    <ul class="note-list" id="note-list">
+      {{template "list" .}}
+    </ul>
+  </nav>
+
+  <main class="content" id="content">
+    {{if .NoteHTML}}
+      {{template "note" .}}
+    {{else}}
+      <div class="content--empty">Select a note to read it.</div>
+    {{end}}
+  </main>
+</div>
+
+<script>
+  var toggleBtn = document.getElementById('theme-toggle');
+  var themeIcon = document.getElementById('theme-icon');
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    themeIcon.textContent = theme === 'dark' ? '☾' : '☀';
+    localStorage.setItem('zk-theme', theme);
+  }
+  applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+  toggleBtn.addEventListener('click', function() {
+    var current = document.documentElement.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  var hamburger = document.getElementById('hamburger');
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebar-overlay');
+  function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('open'); }
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+  hamburger.addEventListener('click', function() {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.mermaid) mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  });
+  document.addEventListener('htmx:afterSwap', function() {
+    if (window.mermaid) mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+  });
+</script>
+</body>
+</html>

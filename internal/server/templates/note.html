@@ -1,0 +1,21 @@
+{{define "note"}}
+<article>
+  <header class="note-header">
+    <h1 class="note-header__title">
+      {{if .CurrentNote.Title}}{{.CurrentNote.Title}}{{else}}{{.CurrentNote.FilenameStem}}{{end}}
+    </h1>
+    <div class="note-header__meta">
+      <span>Created: {{.CurrentNote.Created | fmtDate}}</span>
+      <span>Modified: {{.CurrentNote.Modified | fmtDate}}</span>
+      <span>{{.CurrentNote.WordCount}} words</span>
+      {{range .CurrentNote.Tags}}
+      <span class="note-header__tag">{{.}}</span>
+      {{end}}
+    </div>
+    <hr class="note-header__divider" />
+  </header>
+  <div class="prose">
+    {{.NoteHTML}}
+  </div>
+</article>
+{{end}}
