@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"sync"
 	"time"
 )
 
@@ -34,13 +35,17 @@ type Tag struct {
 
 type Client struct {
 	notebookPath string
+	mu           sync.Mutex
 }
 
 func NewClient(notebookPath string) *Client {
 	return &Client{notebookPath: notebookPath}
 }
 
+// run serializes all zk subprocess calls to prevent concurrent SQLite access.
 func (c *Client) run(args ...string) ([]byte, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	cmd := exec.Command("zk", args...)
 	cmd.Dir = c.notebookPath
 	return cmd.Output()
