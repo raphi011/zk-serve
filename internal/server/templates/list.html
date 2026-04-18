@@ -1,15 +1,21 @@
 {{define "list"}}
 {{range $i, $note := .Notes}}
 <li class="note-list__item{{if $.IsActiveNote $note.Path}} active{{end}}"
-    style="animation-delay: {{mul $i 5}}ms"
-    onclick="window.location='/note/{{$note.Path}}'">
-  <span class="note-list__title">{{if $note.Title}}{{$note.Title}}{{else}}{{$note.FilenameStem}}{{end}}</span>
-  <div class="note-list__meta">
-    <span>{{$note.Modified | fmtDate}}</span>
-    {{range $note.Tags}}
-    <span class="note-list__tag">{{.}}</span>
-    {{end}}
-  </div>
+    style="animation-delay: {{mul $i 5}}ms">
+  <a class="note-list__link" href="/note/{{$note.Path}}">
+    <span class="note-list__title">{{if $note.Title}}{{$note.Title}}{{else}}{{$note.FilenameStem}}{{end}}</span>
+    <div class="note-list__meta">
+      <span>{{$note.Modified | fmtDate}}</span>
+      {{range $note.Tags}}
+      <span class="note-list__tag"
+            hx-get="/search"
+            hx-trigger="click"
+            hx-vals='{"tags": "{{.}}", "q": ""}'
+            hx-target="#note-list"
+            hx-on:click="event.stopPropagation()">{{.}}</span>
+      {{end}}
+    </div>
+  </a>
 </li>
 {{else}}
 <li style="padding: 16px; color: var(--muted); font-size: 13px;">No notes found.</li>

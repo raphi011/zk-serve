@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{if .Title}}{{.Title}} — zk{{else}}zk{{end}}</title>
   <link rel="stylesheet" href="/static/style.css" />
-  <script src="/static/htmx.min.js" defer></script>
-  <script src="/static/mermaid.min.js" defer></script>
+  <link rel="stylesheet" href="/static/chroma.css" />
   <script>
     (function() {
       var stored = localStorage.getItem('zk-theme');
@@ -45,25 +44,36 @@
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
   <nav class="sidebar" id="sidebar">
+    <p class="sidebar__section-title sidebar__section-title--reset"
+       hx-get="/search"
+       hx-trigger="click"
+       hx-vals='{"q": "", "tags": ""}'
+       hx-target="#note-list"
+       hx-on:click="document.querySelector('[name=tags]').value=''"
+       title="Back to folder view">Notes</p>
+    <input type="hidden" name="tags" value="{{.ActiveTag}}" />
+    <ul class="note-list" id="note-list">
+      {{if .Tree}}
+        {{template "tree" .}}
+      {{else}}
+        {{template "list" .}}
+      {{end}}
+    </ul>
+
+    <hr class="sidebar__divider" />
+
     <p class="sidebar__section-title">Tags</p>
     <ul class="tag-list">
       {{range .Tags}}
       <li class="tag-list__item{{if $.IsActiveTag .Name}} active{{end}}"
           hx-get="/search"
+          hx-trigger="click"
           hx-vals='{"tags": "{{.Name}}", "q": "{{$.Query}}"}'
           hx-target="#note-list">
         <span class="tag-list__name">{{.Name}}</span>
         <span class="tag-list__count">{{.NoteCount}}</span>
       </li>
       {{end}}
-    </ul>
-
-    <hr class="sidebar__divider" />
-
-    <p class="sidebar__section-title">Notes</p>
-    <input type="hidden" name="tags" value="{{.ActiveTag}}" />
-    <ul class="note-list" id="note-list">
-      {{template "list" .}}
     </ul>
   </nav>
 
@@ -101,12 +111,15 @@
   });
   overlay.addEventListener('click', closeSidebar);
 
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.mermaid) mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-  });
   document.addEventListener('htmx:afterSwap', function() {
-    if (window.mermaid) mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+    if (window.mermaid) mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
   });
+</script>
+<script src="/static/htmx.min.js"></script>
+<script src="/static/mermaid.min.js"></script>
+<script>
+  if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+  if (window.mermaid) mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
 </script>
 </body>
 </html>

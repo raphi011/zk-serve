@@ -1,0 +1,20 @@
+{{define "tree-node"}}
+{{if .IsDir}}
+<li class="tree__dir">
+  <details{{if .IsOpen}} open{{end}}>
+    <summary class="tree__dir-name">{{.Name}}</summary>
+    <ul class="tree__children">
+      {{range .Children}}{{template "tree-node" .}}{{end}}
+    </ul>
+  </details>
+</li>
+{{else}}
+<li class="tree__file{{if .IsActive}} active{{end}}">
+  <a class="tree__link" href="/note/{{.Path}}">{{.Name}}</a>
+</li>
+{{end}}
+{{end}}
+
+{{define "tree"}}
+{{range .Tree}}{{template "tree-node" .}}{{end}}
+{{end}}

@@ -9,7 +9,11 @@
       <span>Modified: {{.CurrentNote.Modified | fmtDate}}</span>
       <span>{{.CurrentNote.WordCount}} words</span>
       {{range .CurrentNote.Tags}}
-      <span class="note-header__tag">{{.}}</span>
+      <span class="note-header__tag"
+            hx-get="/search"
+            hx-trigger="click"
+            hx-vals='{"tags": "{{.}}", "q": ""}'
+            hx-target="#note-list">{{.}}</span>
       {{end}}
     </div>
     <hr class="note-header__divider" />

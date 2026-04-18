@@ -1,0 +1,3 @@
+bin/
+internal/server/static/htmx.min.js
+internal/server/static/mermaid.min.js
