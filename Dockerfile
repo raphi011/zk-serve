@@ -41,6 +41,6 @@ COPY --from=zk-dl     /usr/local/bin/zk    /usr/local/bin/zk
 VOLUME ["/notebook"]
 EXPOSE 8080
 
-USER zk
+USER 1000
 ENTRYPOINT ["zk-serve"]
 CMD ["--addr", ":8080", "--notebook", "/notebook"]
