@@ -2,6 +2,7 @@ export function initResize() {
   // Saved widths are restored in the inline <head> script to prevent FOUC.
   setupHandle('sidebar-resize', '--sidebar-width', 'sidebar', 120, 360, false);
   setupHandle('toc-resize', '--toc-width', 'toc-panel', 140, 360, true);
+  setupVerticalHandles();
 }
 
 function setupHandle(handleId, cssVar, panelId, min, max, invert) {
@@ -33,4 +34,40 @@ function setupHandle(handleId, cssVar, panelId, min, max, invert) {
     handle.addEventListener('pointermove', onMove);
     handle.addEventListener('pointerup', onUp);
   });
+}
+
+// Vertical resize handles: drag the top border of a collapsible section
+// to adjust the max-height of its scrollable body.
+function setupVerticalHandles() {
+  for (const handle of document.querySelectorAll('.resize-handle-v')) {
+    handle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      handle.setPointerCapture(e.pointerId);
+      handle.classList.add('dragging');
+
+      // The target is the next sibling <details> element's scrollable body.
+      const details = handle.nextElementSibling;
+      if (!details) return;
+      const body = details.querySelector('.toc-links-body, .toc-tags-body, .sidebar-tags-body');
+      if (!body) return;
+
+      const startY = e.clientY;
+      const startHeight = body.getBoundingClientRect().height;
+
+      function onMove(e) {
+        const delta = e.clientY - startY;
+        const height = Math.max(40, startHeight + delta);
+        body.style.maxHeight = height + 'px';
+      }
+
+      function onUp() {
+        handle.classList.remove('dragging');
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', onUp);
+      }
+
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', onUp);
+    });
+  }
 }

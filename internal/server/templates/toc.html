@@ -8,7 +8,8 @@
   {{end}}
 
   {{if .OutgoingLinks}}
-  <details class="toc-links-section">
+  <div class="resize-handle-v" data-resize-target="next"></div>
+  <details class="toc-links-section" open>
     <summary class="toc-links-label">Links <span class="tl-count">{{len .OutgoingLinks}}</span></summary>
     <div class="toc-links-body">
       {{range .OutgoingLinks}}
@@ -22,13 +23,13 @@
   {{end}}
 
   {{if .Backlinks}}
-  <details class="toc-links-section">
+  <div class="resize-handle-v" data-resize-target="next"></div>
+  <details class="toc-links-section" open>
     <summary class="toc-links-label">Backlinks <span class="tl-count">{{len .Backlinks}}</span></summary>
     <div class="toc-links-body">
       {{range .Backlinks}}<a class="toc-link-item toc-link-in" href="/note/{{.SourcePath}}">{{.SourceTitle}}</a>{{end}}
     </div>
   </details>
   {{end}}
-
 </aside>
 {{end}}

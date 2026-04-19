@@ -25,6 +25,7 @@
     <div id="sidebar-inner">
       {{if .Tree}}<div class="server-tree">{{template "tree" .}}</div>{{end}}
       {{if .Tags}}
+      <div class="resize-handle-v server-tree" data-resize-target="next"></div>
       <details class="sidebar-tags-section server-tree" open>
         <summary class="sidebar-section-label">Tags <span class="sidebar-tag-count">{{len .Tags}}</span></summary>
         <div class="sidebar-tags-body">
