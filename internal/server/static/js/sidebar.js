@@ -93,9 +93,9 @@ function restoreSidebar() {
   if (selectedTags.length > 0 || searchQuery.trim()) {
     render();
   } else {
-    // No other filters active — restore the server-rendered tree.
-    sidebar.querySelectorAll('.server-tree').forEach(el => el.style.display = '');
-    sidebarInner.querySelectorAll('.client-results').forEach(el => el.remove());
+    // No other filters — re-fetch the tree from the server since the
+    // date filter's HTMX swap destroyed the original .server-tree DOM.
+    htmx.ajax('GET', '/search', { target: '#sidebar-inner', swap: 'innerHTML' });
   }
 }
 
