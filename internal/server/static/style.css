@@ -1186,6 +1186,13 @@ a.backlink-card, .backlink-card {
     scrollbar-color: var(--border) transparent;
   }
 
+  .cmd-empty {
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-faint);
+    font-family: var(--font-ui);
+  }
+
   .cmd-group-label {
     font-size: 9px;
     letter-spacing: 0.08em;
