@@ -6,6 +6,7 @@ import { initCommandPalette } from './command-palette.js';
 import { initHTMXHooks } from './htmx-hooks.js';
 import { initCalendar } from './calendar.js';
 import { initKeys } from './keys.js';
+import { recordVisit } from './history.js';
 
 initTheme();
 initResize();
@@ -15,3 +16,8 @@ initCommandPalette();
 initHTMXHooks();
 initCalendar();
 initKeys();
+
+// Record initial page load if it's a note.
+if (location.pathname.startsWith('/note/')) {
+  recordVisit(decodeURIComponent(location.pathname).replace(/^\/note\//, ''));
+}

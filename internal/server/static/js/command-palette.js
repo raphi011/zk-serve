@@ -1,6 +1,9 @@
 import { esc } from './utils.js';
+import { getRecentPaths } from './history.js';
 
 const manifest = window.__ZK_MANIFEST || [];
+// Build path→note lookup once for O(1) access.
+const byPath = new Map(manifest.map(n => [n.path, n]));
 let focusIdx = 0;
 
 export function initCommandPalette() {
@@ -72,10 +75,25 @@ function renderResults(query, container) {
   let html = '';
 
   if (!q) {
-    const recent = manifest.slice(0, 8);
-    if (recent.length) {
+    // Recently visited (from localStorage).
+    const visitedPaths = getRecentPaths();
+    const visited = visitedPaths.map(p => byPath.get(p)).filter(Boolean).slice(0, 5);
+    const visitedSet = new Set(visitedPaths);
+
+    if (visited.length) {
       html += '<div class="cmd-group-label">Recent</div>';
-      recent.forEach(n => { html += itemHtml(n); });
+      visited.forEach(n => { html += itemHtml(n); });
+    }
+
+    // Recently modified (excluding already-shown visited notes).
+    const modified = [...manifest]
+      .sort((a, b) => b.mod - a.mod)
+      .filter(n => !visitedSet.has(n.path))
+      .slice(0, 5);
+
+    if (modified.length) {
+      html += '<div class="cmd-group-label">Recently modified</div>';
+      modified.forEach(n => { html += itemHtml(n); });
     }
   } else {
     const matched = manifest.filter(n =>
@@ -114,4 +132,3 @@ function highlight(text, query) {
   const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
   return escaped.replace(re, '<mark>$1</mark>');
 }
-

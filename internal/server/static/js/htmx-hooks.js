@@ -1,12 +1,13 @@
 import { initToc } from './toc.js';
 import { initResize } from './resize.js';
+import { recordVisit } from './history.js';
 
 export function initHTMXHooks() {
   // Use afterSettle so OOB swaps (#toc-panel) are complete before re-init.
   document.body.addEventListener('htmx:afterSettle', (e) => {
     if (e.detail.target.id !== 'content-col') return;
 
-    // 1. Update tree active state.
+    // 1. Update tree active state + record visit.
     updateTreeActive();
 
     // 2. Re-init TOC observer + progress bar.
@@ -34,6 +35,9 @@ export function initHTMXHooks() {
 
 function updateTreeActive() {
   const path = decodeURIComponent(location.pathname).replace(/^\/note\//, '').replace(/^\/folder\//, '');
+
+  // Record note visit for command palette recents.
+  if (location.pathname.startsWith('/note/')) recordVisit(path);
 
   // Remove old active.
   document.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));

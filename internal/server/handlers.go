@@ -142,9 +142,10 @@ func buildTree(notes []zk.Note, activePath string) []*model.FileNode {
 
 func buildManifestJSON(notes []zk.Note) string {
 	type entry struct {
-		Title string   `json:"title"`
-		Path  string   `json:"path"`
-		Tags  []string `json:"tags"`
+		Title    string   `json:"title"`
+		Path     string   `json:"path"`
+		Tags     []string `json:"tags"`
+		Modified int64    `json:"mod"`
 	}
 	entries := make([]entry, len(notes))
 	for i, n := range notes {
@@ -152,7 +153,7 @@ func buildManifestJSON(notes []zk.Note) string {
 		if tags == nil {
 			tags = []string{}
 		}
-		entries[i] = entry{Title: n.Title, Path: n.Path, Tags: tags}
+		entries[i] = entry{Title: n.Title, Path: n.Path, Tags: tags, Modified: n.Modified.Unix()}
 	}
 	b, _ := json.Marshal(entries)
 	return string(b)
