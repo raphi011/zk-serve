@@ -1283,7 +1283,7 @@ a.backlink-card, .backlink-card {
       background: none;
       border: none;
       outline: none;
-      font-size: 15px;
+      font-size: 16px;
       font-family: var(--font-prose);
       color: var(--text);
 
@@ -1325,14 +1325,6 @@ a.backlink-card, .backlink-card {
     color: var(--text);
 
     &:hover, &.focused { background: var(--bg-hover); }
-
-    .cmd-icon {
-      color: var(--text-faint);
-      width: 16px;
-      text-align: center;
-      flex-shrink: 0;
-      font-size: 12px;
-    }
 
     .cmd-label { flex: 1; }
 

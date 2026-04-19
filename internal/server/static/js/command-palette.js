@@ -98,7 +98,6 @@ function itemHtml(note, query) {
   const title = query ? highlight(note.title || note.path, query) : esc(note.title || note.path);
   const tags = note.tags.map(t => '#' + t).join(' ');
   return `<div class="cmd-item" data-href="/note/${encodeURI(note.path)}">
-    <span class="cmd-icon">📄</span>
     <span class="cmd-label">${title}</span>
     <span class="cmd-sub">${esc(tags)}</span>
   </div>`;
