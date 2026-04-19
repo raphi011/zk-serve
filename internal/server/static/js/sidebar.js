@@ -2,9 +2,10 @@ import { esc } from './utils.js';
 
 const manifest = window.__ZK_MANIFEST || [];
 let selectedTags = [];
+let selectedDate = null;
 let searchQuery = '';
 
-let filterInput, filtersEl, sidebarInner, sidebar, tagsSection;
+let filterInput, filtersEl, sidebarInner, sidebar;
 
 export function initSidebar() {
   filterInput = document.getElementById('sidebar-filter');
@@ -16,10 +17,13 @@ export function initSidebar() {
 
   filterInput.addEventListener('input', () => {
     searchQuery = filterInput.value;
+    if (searchQuery.trim() && selectedDate) {
+      clearDate(true);
+    }
     render();
   });
 
-  // Event delegation for tag clicks (data-tag attribute).
+  // Event delegation for tag and filter-chip clicks.
   document.addEventListener('click', (e) => {
     const tagEl = e.target.closest('[data-tag]');
     if (tagEl && !e.target.closest('.filter-chip')) {
@@ -29,7 +33,12 @@ export function initSidebar() {
     }
     const chip = e.target.closest('.filter-chip');
     if (chip) {
-      removeTag(chip.dataset.tag);
+      if (chip.dataset.date) {
+        clearDate(true);
+        restoreSidebar();
+      } else if (chip.dataset.tag) {
+        removeTag(chip.dataset.tag);
+      }
     }
   });
 
@@ -48,9 +57,52 @@ export function initSidebar() {
   }
 }
 
+// ── Public API for calendar.js ──────────────────────────────
+
+// setDateFilter activates a date filter, updates the filter bar, and
+// fetches matching notes from the server.
+export function setDateFilter(date) {
+  selectedDate = date;
+  renderFilters();
+  htmx.ajax('GET', '/search?date=' + date, { target: '#sidebar-inner', swap: 'innerHTML' });
+}
+
+// clearDateFilter removes the date filter, updates the filter bar,
+// and restores the sidebar to its previous state.
+export function clearDateFilter() {
+  clearDate(false);
+  restoreSidebar();
+}
+
+// getSelectedDate returns the currently active date filter (or null).
+export function getSelectedDate() {
+  return selectedDate;
+}
+
+// ── Internal ────────────────────────────────────────────────
+
+function clearDate(notify) {
+  selectedDate = null;
+  renderFilters();
+  if (notify) {
+    document.dispatchEvent(new CustomEvent('zk:date-cleared'));
+  }
+}
+
+function restoreSidebar() {
+  if (selectedTags.length > 0 || searchQuery.trim()) {
+    render();
+  } else {
+    // No other filters active — restore the server-rendered tree.
+    sidebar.querySelectorAll('.server-tree').forEach(el => el.style.display = '');
+    sidebarInner.querySelectorAll('.client-results').forEach(el => el.remove());
+  }
+}
+
 function addTag(tag) {
   if (!selectedTags.includes(tag)) {
     selectedTags.push(tag);
+    if (selectedDate) clearDate(true);
     render();
   }
 }
@@ -112,15 +164,23 @@ function render() {
 
 function renderFilters() {
   if (!filtersEl) return;
-  if (selectedTags.length === 0) {
+  const hasFilters = selectedTags.length > 0 || selectedDate;
+  if (!hasFilters) {
     filtersEl.style.display = 'none';
     return;
   }
   filtersEl.style.display = 'flex';
-  filtersEl.innerHTML =
-    '<span id="active-filters-label">Filter:</span>' +
-    selectedTags.map(t =>
-      `<span class="filter-chip" data-tag="${esc(t)}">${esc(t)} <span class="remove">×</span></span>`
-    ).join('');
-}
 
+  let html = '<span id="active-filters-label">Filter:</span>';
+
+  if (selectedDate) {
+    html += `<span class="filter-chip" data-date="${esc(selectedDate)}">` +
+            `${esc(selectedDate)} <span class="remove">\u00d7</span></span>`;
+  }
+
+  html += selectedTags.map(t =>
+    `<span class="filter-chip" data-tag="${esc(t)}">${esc(t)} <span class="remove">\u00d7</span></span>`
+  ).join('');
+
+  filtersEl.innerHTML = html;
+}

@@ -175,6 +175,12 @@ func (s *Server) calendarData() (int, int, map[int]bool) {
 	return year, month, days
 }
 
+// renderTOC renders the TOC panel as an OOB swap, always including the calendar.
+func (s *Server) renderTOC(w http.ResponseWriter, r *http.Request, headings []render.Heading, outLinks []zk.Link, backlinks []zk.Link) {
+	calYear, calMonth, activeDays := s.calendarData()
+	views.TOCPanel(headings, outLinks, backlinks, true, calYear, calMonth, activeDays).Render(r.Context(), w)
+}
+
 // renderFullPage renders a complete page layout with sidebar, TOC, and calendar.
 func (s *Server) renderFullPage(w http.ResponseWriter, r *http.Request, p views.LayoutParams) {
 	calYear, calMonth, activeDays := s.calendarData()
@@ -212,7 +218,7 @@ func (s *Server) renderNote(w http.ResponseWriter, r *http.Request, note *zk.Not
 
 	if isHTMX(r) {
 		views.NoteContentCol(breadcrumbs, note, result.HTML, backlinks, result.Headings).Render(r.Context(), w)
-		views.TOCPanel(result.Headings, outLinks, backlinks, true, 0, 0, nil).Render(r.Context(), w)
+		s.renderTOC(w, r, result.Headings, outLinks, backlinks)
 		return
 	}
 
@@ -236,7 +242,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	if isHTMX(r) {
 		views.EmptyContentCol().Render(r.Context(), w)
-		views.TOCPanel(nil, nil, nil, true, 0, 0, nil).Render(r.Context(), w)
+		s.renderTOC(w, r, nil, nil, nil)
 		return
 	}
 
@@ -404,7 +410,7 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 
 	if isHTMX(r) {
 		views.FolderContentCol(breadcrumbs, folderName, entries).Render(r.Context(), w)
-		views.TOCPanel(nil, nil, nil, true, 0, 0, nil).Render(r.Context(), w)
+		s.renderTOC(w, r, nil, nil, nil)
 		return
 	}
 

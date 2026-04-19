@@ -1,15 +1,13 @@
-let selectedDate = null;
+import { setDateFilter, clearDateFilter, getSelectedDate } from './sidebar.js';
 
 export function initCalendar() {
   const cal = document.getElementById('calendar');
   if (!cal) return;
 
   // Restore selection from URL on initial load.
-  const params = new URLSearchParams(location.search);
-  const urlDate = params.get('date');
+  const urlDate = new URLSearchParams(location.search).get('date');
   if (urlDate) {
-    selectedDate = urlDate;
-    applyDateFilter(urlDate);
+    setDateFilter(urlDate);
     highlightDay(urlDate);
   }
 
@@ -20,61 +18,50 @@ export function initCalendar() {
     const date = dayEl.dataset.date;
     if (!date) return;
 
+    e.preventDefault();
+    e.stopPropagation();
+
     // Toggle: clicking the selected day again clears the filter.
-    if (selectedDate === date) {
-      e.preventDefault();
-      e.stopPropagation();
+    if (getSelectedDate() === date) {
       clearDateFilter();
+      clearHighlight();
+      removeDateURL();
       return;
     }
 
-    // Set new selection.
-    e.preventDefault();
-    e.stopPropagation();
-    clearSelection();
-    selectedDate = date;
-    dayEl.classList.add('cal-selected');
-    applyDateFilter(date);
+    setDateFilter(date);
+    highlightDay(date);
     pushDateURL(date);
   });
 
-  // Clear calendar selection when sidebar filter or tags are used.
-  const filterInput = document.getElementById('sidebar-filter');
-  if (filterInput) {
-    filterInput.addEventListener('input', () => {
-      if (filterInput.value.trim()) {
-        clearCalendarSelection();
-      }
-    });
-  }
-
-  // Restore selection after month navigation swap.
+  // Restore highlight after calendar month navigation swap.
   document.body.addEventListener('htmx:afterSwap', (e) => {
     if (e.detail.target.id !== 'calendar') return;
-    if (selectedDate) {
-      highlightDay(selectedDate);
-    }
+    const date = getSelectedDate();
+    if (date) highlightDay(date);
   });
 
-  // Handle browser back/forward to restore or clear date filter.
+  // Sidebar dismissed the date chip — sync visual state and URL.
+  document.addEventListener('zk:date-cleared', () => {
+    clearHighlight();
+    removeDateURL();
+  });
+
+  // Handle browser back/forward.
   window.addEventListener('popstate', () => {
-    const p = new URLSearchParams(location.search);
-    const d = p.get('date');
-    if (d && d !== selectedDate) {
-      selectedDate = d;
-      applyDateFilter(d);
-      highlightDay(d);
-    } else if (!d && selectedDate) {
-      selectedDate = null;
-      clearSelection();
-      htmx.ajax('GET', '/search', { target: '#sidebar-inner', swap: 'innerHTML' });
+    const date = new URLSearchParams(location.search).get('date');
+    const current = getSelectedDate();
+    if (date && date !== current) {
+      setDateFilter(date);
+      highlightDay(date);
+    } else if (!date && current) {
+      clearDateFilter();
+      clearHighlight();
     }
   });
 }
 
-function applyDateFilter(date) {
-  htmx.ajax('GET', '/search?date=' + date, { target: '#sidebar-inner', swap: 'innerHTML' });
-}
+// ── URL management ──────────────────────────────────────────
 
 function pushDateURL(date) {
   const url = new URL(location.href);
@@ -90,27 +77,14 @@ function removeDateURL() {
   }
 }
 
-function clearDateFilter() {
-  selectedDate = null;
-  clearSelection();
-  removeDateURL();
-  htmx.ajax('GET', '/search', { target: '#sidebar-inner', swap: 'innerHTML' });
-}
+// ── Calendar visual state ───────────────────────────────────
 
 function highlightDay(date) {
-  clearSelection();
+  clearHighlight();
   const dayEl = document.querySelector(`.cal-day-active[data-date="${date}"]`);
   if (dayEl) dayEl.classList.add('cal-selected');
 }
 
-function clearSelection() {
+function clearHighlight() {
   document.querySelectorAll('.cal-selected').forEach(el => el.classList.remove('cal-selected'));
-}
-
-export function clearCalendarSelection() {
-  if (selectedDate) {
-    selectedDate = null;
-    clearSelection();
-    removeDateURL();
-  }
 }
