@@ -2,3 +2,4 @@ bin/
 docs/superpowers/
 internal/server/static/htmx.min.js
 internal/server/static/mermaid.min.js
+internal/server/static/app.min.js
