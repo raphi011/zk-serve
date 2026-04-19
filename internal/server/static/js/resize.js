@@ -37,7 +37,8 @@ function setupHandle(handleId, cssVar, panelId, min, max, invert) {
 }
 
 // Vertical resize handles: drag the border between two sections
-// to adjust the max-height of the adjacent collapsible section.
+// to adjust the max-height of the section above the handle.
+// Drag down → section above grows. Drag up → section above shrinks.
 function setupVerticalHandles() {
   for (const handle of document.querySelectorAll('.resize-handle-v')) {
     handle.addEventListener('pointerdown', (e) => {
@@ -45,18 +46,18 @@ function setupVerticalHandles() {
       handle.setPointerCapture(e.pointerId);
       handle.classList.add('dragging');
 
-      // The target is the next sibling <details> element.
-      const details = handle.nextElementSibling;
-      if (!details) return;
+      // The target is the previous sibling (the section above the handle).
+      const target = handle.previousElementSibling;
+      if (!target) return;
 
       const startY = e.clientY;
-      const startHeight = details.getBoundingClientRect().height;
+      const startHeight = target.getBoundingClientRect().height;
 
       function onMove(e) {
         const delta = e.clientY - startY;
-        // Handle is above target: drag up → grow, drag down → shrink.
-        const height = Math.max(40, startHeight - delta);
-        details.style.maxHeight = height + 'px';
+        // Drag down → positive delta → grow section above.
+        const height = Math.max(40, startHeight + delta);
+        target.style.maxHeight = height + 'px';
       }
 
       function onUp() {
