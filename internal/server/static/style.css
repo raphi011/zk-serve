@@ -298,6 +298,8 @@ article {
 }
 .breadcrumb__item {
   cursor: pointer;
+  color: var(--muted);
+  text-decoration: none;
   transition: color 0.15s;
   padding: 2px 4px;
   border-radius: 3px;
