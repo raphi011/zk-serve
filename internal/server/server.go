@@ -2,10 +2,14 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"net/http"
+	"time"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
@@ -117,6 +121,28 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListenAndServe starts the HTTP server on addr.
-func (s *Server) ListenAndServe(addr string) error {
-	return http.ListenAndServe(addr, s)
+// It shuts down gracefully when ctx is cancelled, draining in-flight requests
+// for up to 5 seconds before forcing a close.
+func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
+	srv := &http.Server{Addr: addr, Handler: s}
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- srv.ListenAndServe() }()
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+		log.Println("shutting down…")
+		shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(shutCtx); err != nil {
+			return fmt.Errorf("shutdown: %w", err)
+		}
+		// ListenAndServe returns ErrServerClosed after Shutdown — that's normal.
+		if err := <-errCh; err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
+	}
 }

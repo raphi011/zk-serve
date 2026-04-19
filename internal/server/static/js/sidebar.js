@@ -99,8 +99,8 @@ function render() {
          hx-target="#content-col"
          hx-push-url="true">
         <div class="result-title">${esc(n.title || n.path)}</div>
-        ${n.tags.length ? `<div class="result-tags">${n.tags.map(t =>
-          `<span class="result-tag">${esc(t)}</span>`
+        ${n.tags.length ? `<div class="tag-pills">${n.tags.map(t =>
+          `<span class="tag-pill">${esc(t)}</span>`
         ).join('')}</div>` : ''}
       </a>
     `).join('');

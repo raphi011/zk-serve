@@ -309,14 +309,14 @@ func NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings [
 							return templ_7745c5c3_Err
 						}
 						for _, tag := range link.SourceTags {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span class=\"backlink-tag\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span class=\"tag-pill\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var18 string
 							templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(tag)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/views/content.templ`, Line: 55, Col: 41}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/views/content.templ`, Line: 55, Col: 37}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 							if templ_7745c5c3_Err != nil {

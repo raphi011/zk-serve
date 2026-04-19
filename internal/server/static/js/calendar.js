@@ -4,6 +4,15 @@ export function initCalendar() {
   const cal = document.getElementById('calendar');
   if (!cal) return;
 
+  // Restore selection from URL on initial load.
+  const params = new URLSearchParams(location.search);
+  const urlDate = params.get('date');
+  if (urlDate) {
+    selectedDate = urlDate;
+    applyDateFilter(urlDate);
+    highlightDay(urlDate);
+  }
+
   cal.addEventListener('click', (e) => {
     const dayEl = e.target.closest('.cal-day-active');
     if (!dayEl) return;
@@ -15,17 +24,18 @@ export function initCalendar() {
     if (selectedDate === date) {
       e.preventDefault();
       e.stopPropagation();
-      selectedDate = null;
-      dayEl.classList.remove('cal-selected');
-      // Restore full tree.
-      htmx.ajax('GET', '/search', { target: '#sidebar-inner', swap: 'innerHTML' });
+      clearDateFilter();
       return;
     }
 
     // Set new selection.
+    e.preventDefault();
+    e.stopPropagation();
     clearSelection();
     selectedDate = date;
     dayEl.classList.add('cal-selected');
+    applyDateFilter(date);
+    pushDateURL(date);
   });
 
   // Clear calendar selection when sidebar filter or tags are used.
@@ -42,12 +52,55 @@ export function initCalendar() {
   document.body.addEventListener('htmx:afterSwap', (e) => {
     if (e.detail.target.id !== 'calendar') return;
     if (selectedDate) {
-      const dayEl = document.querySelector(`.cal-day-active[data-date="${selectedDate}"]`);
-      if (dayEl) {
-        dayEl.classList.add('cal-selected');
-      }
+      highlightDay(selectedDate);
     }
   });
+
+  // Handle browser back/forward to restore or clear date filter.
+  window.addEventListener('popstate', () => {
+    const p = new URLSearchParams(location.search);
+    const d = p.get('date');
+    if (d && d !== selectedDate) {
+      selectedDate = d;
+      applyDateFilter(d);
+      highlightDay(d);
+    } else if (!d && selectedDate) {
+      selectedDate = null;
+      clearSelection();
+      htmx.ajax('GET', '/search', { target: '#sidebar-inner', swap: 'innerHTML' });
+    }
+  });
+}
+
+function applyDateFilter(date) {
+  htmx.ajax('GET', '/search?date=' + date, { target: '#sidebar-inner', swap: 'innerHTML' });
+}
+
+function pushDateURL(date) {
+  const url = new URL(location.href);
+  url.searchParams.set('date', date);
+  history.pushState({}, '', url);
+}
+
+function removeDateURL() {
+  const url = new URL(location.href);
+  if (url.searchParams.has('date')) {
+    url.searchParams.delete('date');
+    history.pushState({}, '', url);
+  }
+}
+
+function clearDateFilter() {
+  selectedDate = null;
+  clearSelection();
+  removeDateURL();
+  htmx.ajax('GET', '/search', { target: '#sidebar-inner', swap: 'innerHTML' });
+}
+
+function highlightDay(date) {
+  clearSelection();
+  const dayEl = document.querySelector(`.cal-day-active[data-date="${date}"]`);
+  if (dayEl) dayEl.classList.add('cal-selected');
 }
 
 function clearSelection() {
@@ -55,6 +108,9 @@ function clearSelection() {
 }
 
 export function clearCalendarSelection() {
-  clearSelection();
-  selectedDate = null;
+  if (selectedDate) {
+    selectedDate = null;
+    clearSelection();
+    removeDateURL();
+  }
 }

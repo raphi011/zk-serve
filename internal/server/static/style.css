@@ -585,13 +585,13 @@ details[open] > .tree-folder > .tree-chevron {
   margin-top: 2px;
 }
 
-.result-tag {
-  font-size: 9px;
+.tag-pill {
+  font-size: 10px;
   font-family: var(--font-ui);
   color: var(--accent-tag);
   background: var(--accent-soft);
   border-radius: 2px;
-  padding: 0 3px;
+  padding: 0 4px;
   line-height: 1.5;
 }
 
@@ -940,13 +940,8 @@ a.backlink-card, .backlink-card {
     flex-shrink: 0;
   }
 
-  .backlink-tag {
-    font-size: 10px;
-    font-family: var(--font-ui);
-    color: var(--accent-tag);
-    background: var(--accent-soft);
-    border-radius: 2px;
-    padding: 0 4px;
+  .tag-pill {
+    flex-shrink: 0;
   }
 }
 

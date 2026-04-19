@@ -52,7 +52,7 @@ templ NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings 
 						if len(link.SourceTags) > 0 {
 							<span class="backlink-card-tags">
 								for _, tag := range link.SourceTags {
-									<span class="backlink-tag">{ tag }</span>
+									<span class="tag-pill">{ tag }</span>
 								}
 							</span>
 						}

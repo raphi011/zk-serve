@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -54,7 +56,9 @@ dark-academic web viewer with live search, tag filtering, and Markdown rendering
 			if open {
 				openBrowser(url)
 			}
-			return srv.ListenAndServe(addr)
+			ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
+			defer stop()
+			return srv.ListenAndServe(ctx, addr)
 		},
 	}
 

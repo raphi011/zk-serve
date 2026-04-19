@@ -17,9 +17,9 @@ templ SearchResults(notes []zk.Note) {
 						</div>
 					}
 					if len(note.Tags) > 0 {
-						<div class="result-tags">
+						<div class="tag-pills">
 							for _, tag := range note.Tags {
-								<span class="result-tag">{ tag }</span>
+								<span class="tag-pill">{ tag }</span>
 							}
 						</div>
 					}
