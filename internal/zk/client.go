@@ -15,6 +15,7 @@ type Note struct {
 	AbsPath      string         `json:"absPath"`
 	Title        string         `json:"title"`
 	Lead         string         `json:"lead"`
+	Snippet      string         `json:"snippet,omitempty"`
 	Body         string         `json:"body"`
 	Snippets     []string       `json:"snippets"`
 	RawContent   string         `json:"rawContent"`
