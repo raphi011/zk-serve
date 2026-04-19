@@ -110,9 +110,62 @@ func (r *mermaidRenderer) render(w util.BufWriter, _ []byte, node ast.Node, ente
 	return ast.WalkContinue, nil
 }
 
+// Heading represents a heading extracted from the Goldmark AST.
+type Heading struct {
+	ID    string
+	Text  string
+	Level int
+}
+
+// Result is the output of rendering markdown.
+type Result struct {
+	HTML     string
+	Headings []Heading
+}
+
+// headingCollector is an AST transformer that collects h2/h3 headings.
+type headingCollector struct {
+	headings []Heading
+}
+
+func (hc *headingCollector) Transform(doc *ast.Document, reader text.Reader, pc parser.Context) {
+	src := reader.Source()
+	ast.Walk(doc, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+		h, ok := node.(*ast.Heading)
+		if !ok || h.Level < 2 || h.Level > 3 {
+			return ast.WalkContinue, nil
+		}
+		// Extract text from heading children.
+		var textBuf bytes.Buffer
+		for c := h.FirstChild(); c != nil; c = c.NextSibling() {
+			if t, ok := c.(*ast.Text); ok {
+				textBuf.Write(t.Segment.Value(src))
+			} else {
+				ast.Walk(c, func(inner ast.Node, entering bool) (ast.WalkStatus, error) {
+					if entering {
+						if t, ok := inner.(*ast.Text); ok {
+							textBuf.Write(t.Segment.Value(src))
+						}
+					}
+					return ast.WalkContinue, nil
+				})
+			}
+		}
+		heading := Heading{Text: textBuf.String(), Level: h.Level}
+		if id, ok := h.AttributeString("id"); ok {
+			heading.ID = string(id.([]byte))
+		}
+		hc.headings = append(hc.headings, heading)
+		return ast.WalkContinue, nil
+	})
+}
+
 // — goldmark ————————————————————————————————————————————————————————————————
 
-func newMD(lookup map[string]string) goldmark.Markdown {
+func newMD(lookup map[string]string, hc *headingCollector) goldmark.Markdown {
 	return goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
@@ -124,8 +177,10 @@ func newMD(lookup map[string]string) goldmark.Markdown {
 			),
 		),
 		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
 			parser.WithASTTransformers(
 				util.Prioritized(&h1Stripper{}, 101),
+				util.Prioritized(hc, 102),
 				util.Prioritized(&mermaidTransformer{}, 100),
 			),
 		),
@@ -141,11 +196,12 @@ func newMD(lookup map[string]string) goldmark.Markdown {
 // Markdown renders src (Markdown bytes with optional YAML frontmatter) to HTML.
 // lookup maps wiki link targets (stem or path-without-extension) to note paths.
 // Pass nil to fall back to /note/<target> for all wiki links.
-func Markdown(src []byte, lookup map[string]string) (string, error) {
+func Markdown(src []byte, lookup map[string]string) (Result, error) {
+	hc := &headingCollector{}
 	var buf bytes.Buffer
 	ctx := parser.NewContext()
-	if err := newMD(lookup).Convert(src, &buf, parser.WithContext(ctx)); err != nil {
-		return "", fmt.Errorf("render markdown: %w", err)
+	if err := newMD(lookup, hc).Convert(src, &buf, parser.WithContext(ctx)); err != nil {
+		return Result{}, fmt.Errorf("render markdown: %w", err)
 	}
-	return buf.String(), nil
+	return Result{HTML: buf.String(), Headings: hc.headings}, nil
 }

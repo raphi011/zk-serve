@@ -241,7 +241,7 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		lookup[n.FilenameStem] = n.Path
 		lookup[strings.TrimSuffix(n.Path, ".md")] = n.Path
 	}
-	rendered, err := render.Markdown(raw, lookup)
+	result, err := render.Markdown(raw, lookup)
 	if err != nil {
 		http.Error(w, "failed to render note: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -253,7 +253,7 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		Tags:        tags,
 		Tree:        buildTree(notes, notePath),
 		CurrentNote: note,
-		NoteHTML:    template.HTML(rendered),
+		NoteHTML:    template.HTML(result.HTML),
 		Breadcrumbs: buildBreadcrumbs(notePath),
 	})
 }
@@ -286,7 +286,7 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 				lookup[n.FilenameStem] = n.Path
 				lookup[strings.TrimSuffix(n.Path, ".md")] = n.Path
 			}
-			rendered, err := render.Markdown(raw, lookup)
+			result, err := render.Markdown(raw, lookup)
 			if err != nil {
 				http.Error(w, "failed to render note: "+err.Error(), http.StatusInternalServerError)
 				return
@@ -297,7 +297,7 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 				Tags:        tags,
 				Tree:        buildTree(notes, note.Path),
 				CurrentNote: note,
-				NoteHTML:    template.HTML(rendered),
+				NoteHTML:    template.HTML(result.HTML),
 				Breadcrumbs: buildBreadcrumbs(note.Path),
 			})
 			return
