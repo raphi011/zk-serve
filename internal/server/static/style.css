@@ -812,8 +812,11 @@ a.meta-tag, .meta-tag {
   }
 
   table {
+    display: block;
+    overflow-x: auto;
     border-collapse: collapse;
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     margin: 1.2em 0;
     font-size: 14px;
   }
