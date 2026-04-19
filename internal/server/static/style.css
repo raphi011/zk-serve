@@ -409,6 +409,41 @@ details[open] > .tree-folder > .tree-chevron {
 
 /* ── Tags in sidebar ───────────────────────────────────────── */
 
+.sidebar-tags-section {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+
+  .sidebar-section-label {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &::-webkit-details-marker { display: none; }
+  }
+
+  .sidebar-tag-count {
+    font-size: 10px;
+    background: var(--bg-active);
+    border-radius: 8px;
+    padding: 0 5px;
+    color: var(--text-faint);
+  }
+}
+
+.sidebar-tags-body {
+  padding: 4px 10px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-height: 180px;
+  overflow-y: auto;
+  resize: vertical;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
 .tags-list {
   padding: 4px 10px 10px;
   display: flex;
