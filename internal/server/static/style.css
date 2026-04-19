@@ -275,6 +275,24 @@ article {
   max-width: 760px;
 }
 
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.breadcrumb__item {
+  cursor: pointer;
+  transition: color 0.1s;
+}
+.breadcrumb__item:hover { color: var(--accent); }
+.breadcrumb__sep { opacity: 0.4; user-select: none; }
+.breadcrumb__current { color: var(--text); opacity: 0.6; }
+
 .note-header { margin-bottom: 32px; }
 
 .note-header__title {

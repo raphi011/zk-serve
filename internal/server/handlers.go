@@ -12,6 +12,27 @@ import (
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
+// BreadcrumbSegment is one folder step in a note's path.
+type BreadcrumbSegment struct {
+	Name       string
+	FolderPath string // e.g. "notes" or "notes/ai"
+}
+
+// buildBreadcrumbs splits a note path into clickable folder segments,
+// excluding the filename itself.
+func buildBreadcrumbs(notePath string) []BreadcrumbSegment {
+	parts := strings.Split(notePath, "/")
+	dirs := parts[:len(parts)-1]
+	crumbs := make([]BreadcrumbSegment, len(dirs))
+	for i, name := range dirs {
+		crumbs[i] = BreadcrumbSegment{
+			Name:       name,
+			FolderPath: strings.Join(parts[:i+1], "/"),
+		}
+	}
+	return crumbs
+}
+
 // FileNode is one entry in the sidebar folder tree.
 type FileNode struct {
 	Name     string
@@ -100,6 +121,7 @@ type pageData struct {
 	Tree        []*FileNode
 	CurrentNote *zk.Note
 	NoteHTML    template.HTML
+	Breadcrumbs []BreadcrumbSegment
 }
 
 func (d *pageData) IsActiveTag(name string) bool  { return d.ActiveTag == name }
@@ -126,12 +148,23 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	activeTag := strings.TrimSpace(r.URL.Query().Get("tags"))
+	folder := strings.TrimSpace(r.URL.Query().Get("folder"))
 
 	if q == "" && activeTag == "" {
 		notes, err := s.zkClient.List("", nil)
 		if err != nil {
 			http.Error(w, "search failed: "+err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if folder != "" {
+			prefix := folder + "/"
+			filtered := notes[:0]
+			for _, n := range notes {
+				if strings.HasPrefix(n.Path, prefix) {
+					filtered = append(filtered, n)
+				}
+			}
+			notes = filtered
 		}
 		renderTemplate(w, s.tmpl, "tree", &pageData{Tree: buildTree(notes, "")})
 		return
@@ -211,6 +244,7 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		Tree:        buildTree(notes, notePath),
 		CurrentNote: note,
 		NoteHTML:    template.HTML(rendered),
+		Breadcrumbs: buildBreadcrumbs(notePath),
 	})
 }
 
