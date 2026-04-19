@@ -942,6 +942,7 @@ a.backlink-card, .backlink-card {
   border-top: 1px solid var(--border);
   padding: 6px 0 4px;
   flex-shrink: 0;
+  min-height: 0;
 }
 
 .toc-links-label {
@@ -967,6 +968,15 @@ a.backlink-card, .backlink-card {
     border-radius: 8px;
     padding: 0 5px;
   }
+}
+
+.toc-links-body,
+.toc-tags-body {
+  max-height: 150px;
+  overflow-y: auto;
+  resize: vertical;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 .toc-links-body {
