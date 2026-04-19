@@ -13,7 +13,8 @@
     <div class="toc-links-body">
       {{range .OutgoingLinks}}
       {{if .IsExternal}}<a class="toc-link-item toc-link-out" href="{{.Href}}" target="_blank" rel="noopener">{{if .TargetTitle}}{{.TargetTitle}}{{else}}{{.Href}}{{end}}</a>
-      {{else}}<a class="toc-link-item toc-link-out" href="/note/{{.TargetPath}}">{{if .TargetTitle}}{{.TargetTitle}}{{else}}{{.Href}}{{end}}</a>
+      {{else if .TargetPath}}<a class="toc-link-item toc-link-out" href="/note/{{.TargetPath}}">{{if .TargetTitle}}{{.TargetTitle}}{{else}}{{.Href}}{{end}}</a>
+      {{else}}<span class="toc-link-item toc-link-out">{{.Href}}</span>
       {{end}}
       {{end}}
     </div>
