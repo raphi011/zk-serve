@@ -4,6 +4,9 @@
     style="animation-delay: {{mul $i 5}}ms">
   <a class="note-list__link" href="/note/{{$note.Path}}">
     <span class="note-list__title">{{if $note.Title}}{{$note.Title}}{{else}}{{$note.FilenameStem}}{{end}}</span>
+    {{if $note.Snippet}}
+    <p class="note-list__snippet">{{$note.Snippet | safeSnippet}}</p>
+    {{end}}
     <div class="note-list__meta">
       <span>{{$note.Modified | fmtDate}}</span>
       {{range $note.Tags}}

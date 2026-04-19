@@ -12,15 +12,14 @@ import (
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
-type stubClient struct {
+type stubStore struct {
 	notes []zk.Note
 	tags  []zk.Tag
 }
 
-func (s *stubClient) List(query string, tags []string) ([]zk.Note, error) {
-	return s.notes, nil
-}
-func (s *stubClient) TagList() ([]zk.Tag, error) { return s.tags, nil }
+func (s *stubStore) AllNotes() ([]zk.Note, error)                      { return s.notes, nil }
+func (s *stubStore) AllTags() ([]zk.Tag, error)                        { return s.tags, nil }
+func (s *stubStore) Search(q string, tags []string) ([]zk.Note, error) { return s.notes, nil }
 
 var testNotes = []zk.Note{
 	{
@@ -39,10 +38,10 @@ var testTags = []zk.Tag{
 
 func newTestServer(t *testing.T, notes []zk.Note, tags []zk.Tag) http.Handler {
 	t.Helper()
-	stub := &stubClient{notes: notes, tags: tags}
-	srv, err := server.NewWithClient(stub)
+	stub := &stubStore{notes: notes, tags: tags}
+	srv, err := server.New(stub)
 	if err != nil {
-		t.Fatalf("NewWithClient: %v", err)
+		t.Fatalf("New: %v", err)
 	}
 	return srv
 }

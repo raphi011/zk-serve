@@ -142,12 +142,12 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	tags, err := s.zkClient.TagList()
+	tags, err := s.store.AllTags()
 	if err != nil {
 		http.Error(w, "failed to list tags: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	notes, err := s.zkClient.List("", nil)
+	notes, err := s.store.AllNotes()
 	if err != nil {
 		http.Error(w, "failed to list notes: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -161,14 +161,14 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	folder := strings.TrimSpace(r.URL.Query().Get("folder"))
 
 	if q == "" && activeTag == "" {
-		notes, err := s.zkClient.List("", nil)
+		notes, err := s.store.AllNotes()
 		if err != nil {
 			http.Error(w, "search failed: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		if folder != "" {
 			prefix := folder + "/"
-			filtered := notes[:0]
+			filtered := notes[:0:0]
 			for _, n := range notes {
 				if strings.HasPrefix(n.Path, prefix) {
 					filtered = append(filtered, n)
@@ -184,7 +184,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if activeTag != "" {
 		tagFilter = []string{activeTag}
 	}
-	notes, err := s.zkClient.List(q, tagFilter)
+	notes, err := s.store.Search(q, tagFilter)
 	if err != nil {
 		http.Error(w, "search failed: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -193,7 +193,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleTags(w http.ResponseWriter, r *http.Request) {
-	tags, err := s.zkClient.TagList()
+	tags, err := s.store.AllTags()
 	if err != nil {
 		http.Error(w, "failed to list tags: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -215,7 +215,7 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	notes, err := s.zkClient.List("", nil)
+	notes, err := s.store.AllNotes()
 	if err != nil {
 		http.Error(w, "failed to list notes: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -246,7 +246,7 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to render note: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tags, _ := s.zkClient.TagList()
+	tags, _ := s.store.AllTags()
 	renderTemplate(w, s.tmpl, "layout.html", &pageData{
 		Title:       note.Title,
 		ActivePath:  notePath,
@@ -264,12 +264,12 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
-	notes, err := s.zkClient.List("", nil)
+	notes, err := s.store.AllNotes()
 	if err != nil {
 		http.Error(w, "failed to list notes: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tags, _ := s.zkClient.TagList()
+	tags, _ := s.store.AllTags()
 
 	// Serve index.md if it exists in this folder.
 	indexPath := folderPath + "/index.md"

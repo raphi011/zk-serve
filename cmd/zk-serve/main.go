@@ -12,6 +12,16 @@ import (
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
+// clientAdapter wraps *zk.Client to satisfy server.Store until main.go
+// is switched to use zk.DB directly (Task 8).
+type clientAdapter struct {
+	c *zk.Client
+}
+
+func (a *clientAdapter) AllNotes() ([]zk.Note, error)                      { return a.c.List("", nil) }
+func (a *clientAdapter) AllTags() ([]zk.Tag, error)                        { return a.c.TagList() }
+func (a *clientAdapter) Search(q string, tags []string) ([]zk.Note, error) { return a.c.List(q, tags) }
+
 func main() {
 	var (
 		addr     string
@@ -35,7 +45,7 @@ dark-academic web viewer with live search, tag filtering, and Markdown rendering
 				return fmt.Errorf("zk CLI not found in PATH: %w", err)
 			}
 			zkClient := zk.NewClient(notebook)
-			srv, err := server.New(zkClient)
+			srv, err := server.New(&clientAdapter{c: zkClient})
 			if err != nil {
 				return fmt.Errorf("init server: %w", err)
 			}

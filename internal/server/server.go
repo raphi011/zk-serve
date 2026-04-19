@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"html"
 	"html/template"
 	"io/fs"
 	"net/http"
+	"strings"
 	"time"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
@@ -31,30 +33,32 @@ var templateFuncs = template.FuncMap{
 	"mul": func(a, b int) int {
 		return a * b
 	},
+	"safeSnippet": func(s string) template.HTML {
+		safe := html.EscapeString(s)
+		safe = strings.ReplaceAll(safe, "⟪MARK_START⟫", "<mark>")
+		safe = strings.ReplaceAll(safe, "⟪MARK_END⟫", "</mark>")
+		return template.HTML(safe)
+	},
 }
 
-// ClientInterface is the subset of zk.Client the server needs.
-type ClientInterface interface {
-	List(query string, tags []string) ([]zk.Note, error)
-	TagList() ([]zk.Tag, error)
+// Store is the data-access interface the server queries on each request.
+type Store interface {
+	AllNotes() ([]zk.Note, error)
+	AllTags() ([]zk.Tag, error)
+	Search(q string, tags []string) ([]zk.Note, error)
 }
 
 // Server wires routes and holds shared state.
 type Server struct {
-	mux       *http.ServeMux
-	tmpl      *template.Template
-	zkClient  ClientInterface
+	mux         *http.ServeMux
+	tmpl        *template.Template
+	store       Store
 	chromaDark  []byte
 	chromaLight []byte
 }
 
-// New creates a Server using a *zk.Client (production path).
-func New(zkClient *zk.Client) (*Server, error) {
-	return NewWithClient(zkClient)
-}
-
-// NewWithClient creates a Server with any ClientInterface (enables testing).
-func NewWithClient(client ClientInterface) (*Server, error) {
+// New creates a Server with any Store implementation.
+func New(store Store) (*Server, error) {
 	tmpl, err := template.New("").
 		Funcs(templateFuncs).
 		ParseFS(templateFS, "templates/*.html")
@@ -72,7 +76,7 @@ func NewWithClient(client ClientInterface) (*Server, error) {
 	s := &Server{
 		mux:         http.NewServeMux(),
 		tmpl:        tmpl,
-		zkClient:    client,
+		store:       store,
 		chromaDark:  dark,
 		chromaLight: light,
 	}
