@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/raphaelgruber/zk-serve/internal/render"
-	"github.com/raphaelgruber/zk-serve/internal/server"
+	"github.com/raphaelgruber/zk-serve/internal/model"
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
-templ Breadcrumb(segments []server.BreadcrumbSegment, currentTitle string) {
+templ Breadcrumb(segments []model.BreadcrumbSegment, currentTitle string) {
 	<nav id="breadcrumb">
 		<a class="bc-seg" href="/">~</a>
 		for _, seg := range segments {
@@ -81,7 +81,7 @@ templ NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings 
 	</article>
 }
 
-templ FolderListing(folderName string, entries []server.FolderEntry) {
+templ FolderListing(folderName string, entries []model.FolderEntry) {
 	<article id="article">
 		<h1>{ folderName }<span style="color:var(--text-faint)">/</span></h1>
 		<hr class="article-divider"/>
@@ -122,7 +122,7 @@ templ FolderListing(folderName string, entries []server.FolderEntry) {
 	</article>
 }
 
-templ NoteContentCol(segments []server.BreadcrumbSegment, note *zk.Note, noteHTML string, backlinks []zk.Link, headings []render.Heading) {
+templ NoteContentCol(segments []model.BreadcrumbSegment, note *zk.Note, noteHTML string, backlinks []zk.Link, headings []render.Heading) {
 	<div id="content-col">
 		if note.Title != "" {
 			@Breadcrumb(segments, note.Title)
@@ -135,7 +135,7 @@ templ NoteContentCol(segments []server.BreadcrumbSegment, note *zk.Note, noteHTM
 	</div>
 }
 
-templ FolderContentCol(segments []server.BreadcrumbSegment, folderName string, entries []server.FolderEntry) {
+templ FolderContentCol(segments []model.BreadcrumbSegment, folderName string, entries []model.FolderEntry) {
 	<div id="content-col">
 		@Breadcrumb(segments, folderName)
 		<div id="content-area">

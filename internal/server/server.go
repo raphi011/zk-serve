@@ -4,12 +4,8 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"html"
-	"html/template"
 	"io/fs"
 	"net/http"
-	"strings"
-	"time"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
@@ -19,27 +15,6 @@ import (
 
 //go:embed static
 var staticFS embed.FS
-
-//go:embed templates
-var templateFS embed.FS
-
-var templateFuncs = template.FuncMap{
-	"fmtDate": func(t time.Time) string {
-		if t.IsZero() {
-			return ""
-		}
-		return t.Format("2006-01-02")
-	},
-	"mul": func(a, b int) int {
-		return a * b
-	},
-	"safeSnippet": func(s string) template.HTML {
-		safe := html.EscapeString(s)
-		safe = strings.ReplaceAll(safe, "⟪MARK_START⟫", "<mark>")
-		safe = strings.ReplaceAll(safe, "⟪MARK_END⟫", "</mark>")
-		return template.HTML(safe)
-	},
-}
 
 // Store is the data-access interface the server queries on each request.
 type Store interface {
@@ -54,7 +29,6 @@ type Store interface {
 // Server wires routes and holds shared state.
 type Server struct {
 	mux         *http.ServeMux
-	tmpl        *template.Template
 	store       Store
 	chromaDark  []byte
 	chromaLight []byte
@@ -62,12 +36,6 @@ type Server struct {
 
 // New creates a Server with any Store implementation.
 func New(store Store) (*Server, error) {
-	tmpl, err := template.New("").
-		Funcs(templateFuncs).
-		ParseFS(templateFS, "templates/*.html")
-	if err != nil {
-		return nil, fmt.Errorf("parse templates: %w", err)
-	}
 	dark, err := buildChromaCSS("dracula")
 	if err != nil {
 		return nil, fmt.Errorf("chroma dark css: %w", err)
@@ -78,7 +46,6 @@ func New(store Store) (*Server, error) {
 	}
 	s := &Server{
 		mux:         http.NewServeMux(),
-		tmpl:        tmpl,
 		store:       store,
 		chromaDark:  dark,
 		chromaLight: light,

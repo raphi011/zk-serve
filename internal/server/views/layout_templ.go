@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"github.com/raphaelgruber/zk-serve/internal/model"
 	"github.com/raphaelgruber/zk-serve/internal/render"
-	"github.com/raphaelgruber/zk-serve/internal/server"
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
@@ -18,7 +18,7 @@ import (
 type LayoutParams struct {
 	Title         string
 	ManifestJSON  string
-	Tree          []*server.FileNode
+	Tree          []*model.FileNode
 	Tags          []zk.Tag
 	ContentCol    templ.Component
 	Headings      []render.Heading

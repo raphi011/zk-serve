@@ -3,11 +3,11 @@ package views
 import (
 	"fmt"
 
-	"github.com/raphaelgruber/zk-serve/internal/server"
+	"github.com/raphaelgruber/zk-serve/internal/model"
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
-templ TreeNode(node *server.FileNode) {
+templ TreeNode(node *model.FileNode) {
 	if node.IsDir {
 		<details open?={ node.IsOpen }>
 			<summary class="tree-folder"><span class="tree-chevron">▸</span>{ node.Name }</summary>
@@ -31,7 +31,7 @@ templ TreeNode(node *server.FileNode) {
 	}
 }
 
-templ Tree(nodes []*server.FileNode) {
+templ Tree(nodes []*model.FileNode) {
 	<div class="sidebar-section-label">Notes</div>
 	for _, node := range nodes {
 		@TreeNode(node)
@@ -54,7 +54,7 @@ templ TagCloud(tags []zk.Tag) {
 	</details>
 }
 
-templ Sidebar(nodes []*server.FileNode, tags []zk.Tag) {
+templ Sidebar(nodes []*model.FileNode, tags []zk.Tag) {
 	<div id="sidebar-search">
 		<input type="text" id="sidebar-filter" placeholder="Filter notes…" autocomplete="off"/>
 	</div>

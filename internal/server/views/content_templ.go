@@ -11,12 +11,12 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
+	"github.com/raphaelgruber/zk-serve/internal/model"
 	"github.com/raphaelgruber/zk-serve/internal/render"
-	"github.com/raphaelgruber/zk-serve/internal/server"
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
-func Breadcrumb(segments []server.BreadcrumbSegment, currentTitle string) templ.Component {
+func Breadcrumb(segments []model.BreadcrumbSegment, currentTitle string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -390,7 +390,7 @@ func NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings [
 	})
 }
 
-func FolderListing(folderName string, entries []server.FolderEntry) templ.Component {
+func FolderListing(folderName string, entries []model.FolderEntry) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -562,7 +562,7 @@ func FolderListing(folderName string, entries []server.FolderEntry) templ.Compon
 	})
 }
 
-func NoteContentCol(segments []server.BreadcrumbSegment, note *zk.Note, noteHTML string, backlinks []zk.Link, headings []render.Heading) templ.Component {
+func NoteContentCol(segments []model.BreadcrumbSegment, note *zk.Note, noteHTML string, backlinks []zk.Link, headings []render.Heading) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -614,7 +614,7 @@ func NoteContentCol(segments []server.BreadcrumbSegment, note *zk.Note, noteHTML
 	})
 }
 
-func FolderContentCol(segments []server.BreadcrumbSegment, folderName string, entries []server.FolderEntry) templ.Component {
+func FolderContentCol(segments []model.BreadcrumbSegment, folderName string, entries []model.FolderEntry) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

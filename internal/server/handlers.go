@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/fs"
 	"net/http"
 	"os"
@@ -11,24 +10,24 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/raphaelgruber/zk-serve/internal/model"
 	"github.com/raphaelgruber/zk-serve/internal/render"
+	"github.com/raphaelgruber/zk-serve/internal/server/views"
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
-// BreadcrumbSegment is one folder step in a note's path.
-type BreadcrumbSegment struct {
-	Name       string
-	FolderPath string // e.g. "notes" or "notes/ai"
+func isHTMX(r *http.Request) bool {
+	return r.Header.Get("HX-Request") != ""
 }
 
 // buildBreadcrumbs splits a note path into clickable folder segments,
 // excluding the filename itself.
-func buildBreadcrumbs(notePath string) []BreadcrumbSegment {
+func buildBreadcrumbs(notePath string) []model.BreadcrumbSegment {
 	parts := strings.Split(notePath, "/")
 	dirs := parts[:len(parts)-1]
-	crumbs := make([]BreadcrumbSegment, len(dirs))
+	crumbs := make([]model.BreadcrumbSegment, len(dirs))
 	for i, name := range dirs {
-		crumbs[i] = BreadcrumbSegment{
+		crumbs[i] = model.BreadcrumbSegment{
 			Name:       name,
 			FolderPath: strings.Join(parts[:i+1], "/"),
 		}
@@ -36,20 +35,10 @@ func buildBreadcrumbs(notePath string) []BreadcrumbSegment {
 	return crumbs
 }
 
-// FileNode is one entry in the sidebar folder tree.
-type FileNode struct {
-	Name     string
-	Path     string // non-empty for notes
-	IsDir    bool
-	IsActive bool
-	IsOpen   bool // dir should render <details open>
-	Children []*FileNode
-}
-
 // buildTree walks the notebook filesystem and builds a sorted folder tree.
 // DB notes provide titles for indexed files; un-indexed .md files use their filename.
 // The .zk directory is excluded.
-func buildTree(notebookPath string, notes []zk.Note, activePath string) []*FileNode {
+func buildTree(notebookPath string, notes []zk.Note, activePath string) []*model.FileNode {
 	// Index DB notes by path for title lookup.
 	titleByPath := make(map[string]string, len(notes))
 	for _, n := range notes {
@@ -57,7 +46,7 @@ func buildTree(notebookPath string, notes []zk.Note, activePath string) []*FileN
 	}
 
 	type treeEntry struct {
-		node     *FileNode
+		node     *model.FileNode
 		children map[string]*treeEntry
 	}
 	root := &treeEntry{children: map[string]*treeEntry{}}
@@ -84,15 +73,15 @@ func buildTree(notebookPath string, notes []zk.Note, activePath string) []*FileN
 		cur := root
 		for i, part := range parts {
 			if _, exists := cur.children[part]; !exists {
-				var node *FileNode
+				var node *model.FileNode
 				if d.IsDir() || i < len(parts)-1 {
-					node = &FileNode{Name: part, IsDir: true}
+					node = &model.FileNode{Name: part, IsDir: true}
 				} else {
 					name := titleByPath[rel]
 					if name == "" {
 						name = strings.TrimSuffix(part, ".md")
 					}
-					node = &FileNode{Name: name, Path: rel, IsActive: rel == activePath}
+					node = &model.FileNode{Name: name, Path: rel, IsActive: rel == activePath}
 				}
 				cur.children[part] = &treeEntry{node: node, children: map[string]*treeEntry{}}
 			}
@@ -102,8 +91,8 @@ func buildTree(notebookPath string, notes []zk.Note, activePath string) []*FileN
 	})
 
 	// flatten returns children and whether any descendant is active.
-	var flatten func(*treeEntry) ([]*FileNode, bool)
-	flatten = func(e *treeEntry) ([]*FileNode, bool) {
+	var flatten func(*treeEntry) ([]*model.FileNode, bool)
+	flatten = func(e *treeEntry) ([]*model.FileNode, bool) {
 		var dirKeys, fileKeys []string
 		for k, child := range e.children {
 			if child.node.IsDir {
@@ -116,7 +105,7 @@ func buildTree(notebookPath string, notes []zk.Note, activePath string) []*FileN
 		sort.Strings(fileKeys)
 
 		anyActive := false
-		nodes := make([]*FileNode, 0, len(e.children))
+		nodes := make([]*model.FileNode, 0, len(e.children))
 		for _, k := range dirKeys {
 			child := e.children[k]
 			child.node.Children, child.node.IsOpen = flatten(child)
@@ -139,54 +128,23 @@ func buildTree(notebookPath string, notes []zk.Note, activePath string) []*FileN
 	return nodes
 }
 
-// FolderEntry is one item (file or subdirectory) in a folder listing.
-type FolderEntry struct {
-	Name  string
-	Path  string
-	Title string
-	IsDir bool
-}
-
-type pageData struct {
-	Title         string
-	Query         string
-	ActiveTag     string
-	ActivePath    string
-	Tags          []zk.Tag
-	Notes         []zk.Note
-	Tree          []*FileNode
-	CurrentNote   *zk.Note
-	NoteHTML      template.HTML
-	Headings      []render.Heading
-	OutgoingLinks []zk.Link
-	Backlinks     []zk.Link
-	Breadcrumbs   []BreadcrumbSegment
-	FolderName    string
-	FolderEntries []FolderEntry
-	ManifestJSON  template.JS
-}
-
-type manifestEntry struct {
-	Title string   `json:"title"`
-	Path  string   `json:"path"`
-	Tags  []string `json:"tags"`
-}
-
-func buildManifest(notes []zk.Note) template.JS {
-	entries := make([]manifestEntry, len(notes))
+func buildManifestJSON(notes []zk.Note) string {
+	type entry struct {
+		Title string   `json:"title"`
+		Path  string   `json:"path"`
+		Tags  []string `json:"tags"`
+	}
+	entries := make([]entry, len(notes))
 	for i, n := range notes {
 		tags := n.Tags
 		if tags == nil {
 			tags = []string{}
 		}
-		entries[i] = manifestEntry{Title: n.Title, Path: n.Path, Tags: tags}
+		entries[i] = entry{Title: n.Title, Path: n.Path, Tags: tags}
 	}
 	b, _ := json.Marshal(entries)
-	return template.JS(b)
+	return string(b)
 }
-
-func (d *pageData) IsActiveTag(name string) bool  { return d.ActiveTag == name }
-func (d *pageData) IsActiveNote(path string) bool { return d.ActivePath == path }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
@@ -203,13 +161,29 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to list notes: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderTemplate(w, s.tmpl, "layout.html", &pageData{Tags: tags, Tree: buildTree(s.store.NotebookPath(), notes, ""), ManifestJSON: buildManifest(notes)})
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	if isHTMX(r) {
+		views.EmptyContentCol().Render(r.Context(), w)
+		views.TOCPanel(nil, nil, nil, true).Render(r.Context(), w)
+		return
+	}
+
+	views.Layout(views.LayoutParams{
+		Tags:         tags,
+		Tree:         buildTree(s.store.NotebookPath(), notes, ""),
+		ManifestJSON: buildManifestJSON(notes),
+		ContentCol:   views.EmptyContentCol(),
+	}).Render(r.Context(), w)
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	activeTag := strings.TrimSpace(r.URL.Query().Get("tags"))
 	folder := strings.TrimSpace(r.URL.Query().Get("folder"))
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	if q == "" && activeTag == "" {
 		notes, err := s.store.AllNotes()
@@ -227,7 +201,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 			}
 			notes = filtered
 		}
-		renderTemplate(w, s.tmpl, "tree", &pageData{Tree: buildTree(s.store.NotebookPath(), notes, "")})
+		views.Tree(buildTree(s.store.NotebookPath(), notes, "")).Render(r.Context(), w)
 		return
 	}
 
@@ -240,7 +214,11 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "search failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderTemplate(w, s.tmpl, "list", &pageData{Query: q, ActiveTag: activeTag, Notes: notes})
+	if len(notes) == 0 {
+		views.SearchEmpty().Render(r.Context(), w)
+	} else {
+		views.SearchResults(notes).Render(r.Context(), w)
+	}
 }
 
 func (s *Server) handleTags(w http.ResponseWriter, r *http.Request) {
@@ -279,7 +257,6 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if note == nil {
-		// Not in DB — try reading from disk (un-indexed files like raw/).
 		absPath := filepath.Join(s.store.NotebookPath(), notePath)
 		if _, err := os.Stat(absPath); err != nil {
 			http.NotFound(w, r)
@@ -309,22 +286,29 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to render note: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tags, _ := s.store.AllTags()
 	outLinks, _ := s.store.OutgoingLinks(notePath)
 	backlinks, _ := s.store.Backlinks(notePath)
-	renderTemplate(w, s.tmpl, "layout.html", &pageData{
+	breadcrumbs := buildBreadcrumbs(notePath)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	if isHTMX(r) {
+		views.NoteContentCol(breadcrumbs, note, result.HTML, backlinks, result.Headings).Render(r.Context(), w)
+		views.TOCPanel(result.Headings, outLinks, backlinks, true).Render(r.Context(), w)
+		return
+	}
+
+	tags, _ := s.store.AllTags()
+	views.Layout(views.LayoutParams{
 		Title:         note.Title,
-		ActivePath:    notePath,
-		Tags:          tags,
+		ManifestJSON:  buildManifestJSON(notes),
 		Tree:          buildTree(s.store.NotebookPath(), notes, notePath),
-		CurrentNote:   note,
-		NoteHTML:      template.HTML(result.HTML),
+		Tags:          tags,
+		ContentCol:    views.NoteContentCol(breadcrumbs, note, result.HTML, backlinks, result.Headings),
 		Headings:      result.Headings,
 		OutgoingLinks: outLinks,
 		Backlinks:     backlinks,
-		Breadcrumbs:   buildBreadcrumbs(notePath),
-		ManifestJSON:  buildManifest(notes),
-	})
+	}).Render(r.Context(), w)
 }
 
 func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
@@ -362,19 +346,26 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 			}
 			outLinks, _ := s.store.OutgoingLinks(note.Path)
 			backlinks, _ := s.store.Backlinks(note.Path)
-			renderTemplate(w, s.tmpl, "layout.html", &pageData{
+			breadcrumbs := buildBreadcrumbs(note.Path)
+
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+			if isHTMX(r) {
+				views.NoteContentCol(breadcrumbs, note, result.HTML, backlinks, result.Headings).Render(r.Context(), w)
+				views.TOCPanel(result.Headings, outLinks, backlinks, true).Render(r.Context(), w)
+				return
+			}
+
+			views.Layout(views.LayoutParams{
 				Title:         note.Title,
-				ActivePath:    note.Path,
-				Tags:          tags,
+				ManifestJSON:  buildManifestJSON(notes),
 				Tree:          buildTree(s.store.NotebookPath(), notes, note.Path),
-				CurrentNote:   note,
-				NoteHTML:      template.HTML(result.HTML),
+				Tags:          tags,
+				ContentCol:    views.NoteContentCol(breadcrumbs, note, result.HTML, backlinks, result.Headings),
 				Headings:      result.Headings,
 				OutgoingLinks: outLinks,
 				Backlinks:     backlinks,
-				Breadcrumbs:   buildBreadcrumbs(note.Path),
-				ManifestJSON:  buildManifest(notes),
-			})
+			}).Render(r.Context(), w)
 			return
 		}
 	}
@@ -382,7 +373,7 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 	// Build directory listing from notes whose path starts with folderPath/.
 	prefix := folderPath + "/"
 	seen := map[string]bool{}
-	var entries []FolderEntry
+	var entries []model.FolderEntry
 	for _, n := range notes {
 		if !strings.HasPrefix(n.Path, prefix) {
 			continue
@@ -390,10 +381,10 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 		rest := strings.TrimPrefix(n.Path, prefix)
 		parts := strings.SplitN(rest, "/", 2)
 		if len(parts) == 1 {
-			entries = append(entries, FolderEntry{Name: parts[0], Path: n.Path, Title: n.Title})
+			entries = append(entries, model.FolderEntry{Name: parts[0], Path: n.Path, Title: n.Title})
 		} else if !seen[parts[0]] {
 			seen[parts[0]] = true
-			entries = append(entries, FolderEntry{Name: parts[0], Path: folderPath + "/" + parts[0], IsDir: true})
+			entries = append(entries, model.FolderEntry{Name: parts[0], Path: folderPath + "/" + parts[0], IsDir: true})
 		}
 	}
 	sort.Slice(entries, func(i, j int) bool {
@@ -403,23 +394,23 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 		return strings.ToLower(entries[i].Name) < strings.ToLower(entries[j].Name)
 	})
 
-	parts := strings.Split(folderPath, "/")
-	folderName := parts[len(parts)-1]
+	folderParts := strings.Split(folderPath, "/")
+	folderName := folderParts[len(folderParts)-1]
+	breadcrumbs := buildBreadcrumbs(folderPath)
 
-	renderTemplate(w, s.tmpl, "layout.html", &pageData{
-		Title:         folderName,
-		Tags:          tags,
-		Tree:          buildTree(s.store.NotebookPath(), notes, ""),
-		Breadcrumbs:   buildBreadcrumbs(folderPath),
-		FolderName:    folderName,
-		FolderEntries: entries,
-		ManifestJSON:  buildManifest(notes),
-	})
-}
-
-func renderTemplate(w http.ResponseWriter, tmpl *template.Template, name string, data any) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := tmpl.ExecuteTemplate(w, name, data); err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
+
+	if isHTMX(r) {
+		views.FolderContentCol(breadcrumbs, folderName, entries).Render(r.Context(), w)
+		views.TOCPanel(nil, nil, nil, true).Render(r.Context(), w)
+		return
 	}
+
+	views.Layout(views.LayoutParams{
+		Title:        folderName,
+		ManifestJSON: buildManifestJSON(notes),
+		Tree:         buildTree(s.store.NotebookPath(), notes, ""),
+		Tags:         tags,
+		ContentCol:   views.FolderContentCol(breadcrumbs, folderName, entries),
+	}).Render(r.Context(), w)
 }
