@@ -8,7 +8,25 @@ package views
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func Placeholder() templ.Component {
+import (
+	"github.com/raphaelgruber/zk-serve/internal/render"
+	"github.com/raphaelgruber/zk-serve/internal/server"
+	"github.com/raphaelgruber/zk-serve/internal/zk"
+)
+
+// LayoutParams holds all data needed for a full page render.
+type LayoutParams struct {
+	Title         string
+	ManifestJSON  string
+	Tree          []*server.FileNode
+	Tags          []zk.Tag
+	ContentCol    templ.Component
+	Headings      []render.Heading
+	OutgoingLinks []zk.Link
+	Backlinks     []zk.Link
+}
+
+func Layout(p LayoutParams) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,7 +47,63 @@ func Placeholder() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<p>templ works</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if p.Title != "" {
+			var templ_7745c5c3_Var2 string
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(p.Title)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/views/layout.templ`, Line: 29, Col: 13}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " — zk")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "zk")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</title><link rel=\"stylesheet\" href=\"/static/style.css\"><link rel=\"stylesheet\" href=\"/static/chroma.css\"><script>\n\t\t\t(function(){var d=document.documentElement,s=d.style;var t=localStorage.getItem('zk-theme');d.setAttribute('data-theme',t||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));var sw=localStorage.getItem('zk-sidebar-width');if(sw)s.setProperty('--sidebar-width',sw+'px');var tw=localStorage.getItem('zk-toc-panel-width');if(tw)s.setProperty('--toc-width',tw+'px')})();\n\t\t</script></head><body><div id=\"progress-bar\"></div><header id=\"topbar\"><button id=\"mob-menu-btn\" aria-label=\"Menu\">☰</button> <a id=\"logo\" href=\"/\"><span class=\"logo-dot\"></span><strong>zk</strong></a><div id=\"topbar-spacer\"></div><button id=\"cmd-trigger\" type=\"button\"><span>Go to file, search…</span><kbd>⌘K</kbd></button> <button id=\"theme-toggle\" type=\"button\" aria-label=\"Toggle theme\"><span id=\"theme-icon\">☾</span></button></header><div id=\"sidebar-backdrop\"></div><div id=\"layout\"><nav id=\"sidebar\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = Sidebar(p.Tree, p.Tags).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</nav><div class=\"resize-handle\" id=\"sidebar-resize\"></div><div id=\"main\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = p.ContentCol.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"resize-handle\" id=\"toc-resize\"></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TOCPanel(p.Headings, p.OutgoingLinks, p.Backlinks, false).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div></div><dialog id=\"cmd-dialog\"><div id=\"cmd-box\"><div id=\"cmd-input-row\"><span class=\"cmd-icon-search\">⌘</span> <input id=\"cmd-input\" type=\"text\" placeholder=\"Go to file, search notes…\" autocomplete=\"off\"></div><div id=\"cmd-results\"></div><div id=\"cmd-footer\"><span class=\"cmd-hint\"><kbd>↑↓</kbd> navigate</span> <span class=\"cmd-hint\"><kbd>↵</kbd> open</span> <span class=\"cmd-hint\"><kbd>esc</kbd> close</span></div></div></dialog>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.Raw("<script>window.__ZK_MANIFEST = "+p.ManifestJSON+";</script>").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<script src=\"/static/htmx.min.js\"></script><script type=\"module\" src=\"/static/js/app.js\"></script><script src=\"/static/mermaid.min.js\"></script><script>\n\t\t\tif(window.mermaid){mermaid.initialize({startOnLoad:false,theme:'dark'});mermaid.run({nodes:document.querySelectorAll('.mermaid')});}\n\t\t</script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

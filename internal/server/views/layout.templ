@@ -1,5 +1,84 @@
 package views
 
-templ Placeholder() {
-	<p>templ works</p>
+import (
+	"github.com/raphaelgruber/zk-serve/internal/render"
+	"github.com/raphaelgruber/zk-serve/internal/server"
+	"github.com/raphaelgruber/zk-serve/internal/zk"
+)
+
+// LayoutParams holds all data needed for a full page render.
+type LayoutParams struct {
+	Title         string
+	ManifestJSON  string
+	Tree          []*server.FileNode
+	Tags          []zk.Tag
+	ContentCol    templ.Component
+	Headings      []render.Heading
+	OutgoingLinks []zk.Link
+	Backlinks     []zk.Link
+}
+
+templ Layout(p LayoutParams) {
+	<!DOCTYPE html>
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<title>
+			if p.Title != "" {
+				{ p.Title } — zk
+			} else {
+				zk
+			}
+		</title>
+		<link rel="stylesheet" href="/static/style.css"/>
+		<link rel="stylesheet" href="/static/chroma.css"/>
+		<script>
+			(function(){var d=document.documentElement,s=d.style;var t=localStorage.getItem('zk-theme');d.setAttribute('data-theme',t||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));var sw=localStorage.getItem('zk-sidebar-width');if(sw)s.setProperty('--sidebar-width',sw+'px');var tw=localStorage.getItem('zk-toc-panel-width');if(tw)s.setProperty('--toc-width',tw+'px')})();
+		</script>
+	</head>
+	<body>
+		<div id="progress-bar"></div>
+		<header id="topbar">
+			<button id="mob-menu-btn" aria-label="Menu">☰</button>
+			<a id="logo" href="/"><span class="logo-dot"></span><strong>zk</strong></a>
+			<div id="topbar-spacer"></div>
+			<button id="cmd-trigger" type="button"><span>Go to file, search…</span><kbd>⌘K</kbd></button>
+			<button id="theme-toggle" type="button" aria-label="Toggle theme"><span id="theme-icon">☾</span></button>
+		</header>
+		<div id="sidebar-backdrop"></div>
+		<div id="layout">
+			<nav id="sidebar">
+				@Sidebar(p.Tree, p.Tags)
+			</nav>
+			<div class="resize-handle" id="sidebar-resize"></div>
+			<div id="main">
+				@p.ContentCol
+				<div class="resize-handle" id="toc-resize"></div>
+				@TOCPanel(p.Headings, p.OutgoingLinks, p.Backlinks, false)
+			</div>
+		</div>
+		<dialog id="cmd-dialog">
+			<div id="cmd-box">
+				<div id="cmd-input-row">
+					<span class="cmd-icon-search">⌘</span>
+					<input id="cmd-input" type="text" placeholder="Go to file, search notes…" autocomplete="off"/>
+				</div>
+				<div id="cmd-results"></div>
+				<div id="cmd-footer">
+					<span class="cmd-hint"><kbd>↑↓</kbd> navigate</span>
+					<span class="cmd-hint"><kbd>↵</kbd> open</span>
+					<span class="cmd-hint"><kbd>esc</kbd> close</span>
+				</div>
+			</div>
+		</dialog>
+		@templ.Raw("<script>window.__ZK_MANIFEST = " + p.ManifestJSON + ";</script>")
+		<script src="/static/htmx.min.js"></script>
+		<script type="module" src="/static/js/app.js"></script>
+		<script src="/static/mermaid.min.js"></script>
+		<script>
+			if(window.mermaid){mermaid.initialize({startOnLoad:false,theme:'dark'});mermaid.run({nodes:document.querySelectorAll('.mermaid')});}
+		</script>
+	</body>
+	</html>
 }
