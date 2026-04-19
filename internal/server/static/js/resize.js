@@ -1,3 +1,5 @@
+let verticalAbort = null;
+
 export function initResize() {
   // Saved widths are restored in the inline <head> script to prevent FOUC.
   setupHandle('sidebar-resize', '--sidebar-width', 'sidebar', 120, 360, false);
@@ -40,6 +42,11 @@ function setupHandle(handleId, cssVar, panelId, min, max, invert) {
 // Controls the scrollable body inside the section below the handle.
 // Drag up → grow (panel expands upward). Drag down → shrink.
 function setupVerticalHandles() {
+  // Abort previous listeners to prevent duplicates after HTMX swaps.
+  if (verticalAbort) verticalAbort.abort();
+  verticalAbort = new AbortController();
+  const signal = verticalAbort.signal;
+
   for (const handle of document.querySelectorAll('.resize-handle-v')) {
     handle.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -73,6 +80,6 @@ function setupVerticalHandles() {
 
       handle.addEventListener('pointermove', onMove);
       handle.addEventListener('pointerup', onUp);
-    });
+    }, { signal });
   }
 }

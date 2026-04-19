@@ -31,7 +31,20 @@ export function initToc() {
   const headingEls = headingIds.map(id => document.getElementById(id)).filter(Boolean);
 
   if (headingEls.length > 0) {
+    // Build id → tocItem[] map for O(1) active toggling.
+    const tocMap = new Map();
+    tocItems.forEach(item => {
+      const href = item.getAttribute('href');
+      const id = href ? href.replace('#', '') : null;
+      if (id) {
+        if (!tocMap.has(id)) tocMap.set(id, []);
+        tocMap.get(id).push(item);
+      }
+    });
+
     let activeId = headingIds[0];
+    // Mark initial active.
+    (tocMap.get(activeId) || []).forEach(el => el.classList.add('active'));
 
     observer = new IntersectionObserver(
       (entries) => {
@@ -40,11 +53,9 @@ export function initToc() {
             activeId = entry.target.id;
           }
         }
-        tocItems.forEach(item => {
-          const href = item.getAttribute('href');
-          const id = href ? href.replace('#', '') : '';
-          item.classList.toggle('active', id === activeId);
-        });
+        // Remove old active, set new.
+        tocItems.forEach(el => el.classList.remove('active'));
+        (tocMap.get(activeId) || []).forEach(el => el.classList.add('active'));
       },
       { root: contentArea, rootMargin: '-10% 0px -80% 0px', threshold: 0 }
     );

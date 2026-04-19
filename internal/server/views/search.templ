@@ -5,34 +5,28 @@ import (
 )
 
 templ SearchResults(notes []zk.Note) {
-	for _, note := range notes {
-		<a class="result-item" href={ templ.SafeURL("/note/" + note.Path) }
-			hx-get={ "/note/" + note.Path }
-			hx-target="#content-col"
-			hx-push-url="true"
-		>
-			<div class="result-title">
-				if note.Title != "" {
-					{ note.Title }
-				} else {
-					{ note.FilenameStem }
-				}
-			</div>
-			<div class="result-meta">{ note.Modified.Format("2006-01-02") }</div>
-			if note.Snippet != "" {
-				<div class="result-snippet">
-					@templ.Raw(safeSnippet(note.Snippet))
-				</div>
-			}
-			if len(note.Tags) > 0 {
-				<div class="result-tags">
-					for _, tag := range note.Tags {
-						<span class="result-tag">{ tag }</span>
+	<ul class="search-results" role="list">
+		for _, note := range notes {
+			<li>
+				@ContentLink("result-item", "/note/" + note.Path) {
+					<div class="result-title">{ note.DisplayTitle() }</div>
+					<div class="result-meta">{ note.Modified.Format("2006-01-02") }</div>
+					if note.Snippet != "" {
+						<div class="result-snippet">
+							@templ.Raw(safeSnippet(note.Snippet))
+						</div>
 					}
-				</div>
-			}
-		</a>
-	}
+					if len(note.Tags) > 0 {
+						<div class="result-tags">
+							for _, tag := range note.Tags {
+								<span class="result-tag">{ tag }</span>
+							}
+						</div>
+					}
+				}
+			</li>
+		}
+	</ul>
 }
 
 templ SearchEmpty() {

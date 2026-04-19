@@ -118,7 +118,7 @@ function navigateNote(direction) {
   if (next.hasAttribute('hx-get')) {
     htmx.ajax('GET', next.getAttribute('hx-get'), {
       target: '#content-col',
-      swap: 'outerHTML',
+      swap: 'innerHTML',
     });
     history.pushState({}, '', next.getAttribute('href'));
   } else {

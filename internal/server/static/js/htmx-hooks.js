@@ -2,7 +2,8 @@ import { initToc } from './toc.js';
 import { initResize } from './resize.js';
 
 export function initHTMXHooks() {
-  document.body.addEventListener('htmx:afterSwap', (e) => {
+  // Use afterSettle so OOB swaps (#toc-panel) are complete before re-init.
+  document.body.addEventListener('htmx:afterSettle', (e) => {
     if (e.detail.target.id !== 'content-col') return;
 
     // 1. Update tree active state.

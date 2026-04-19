@@ -1,8 +1,6 @@
 package views
 
 import (
-	"fmt"
-
 	"github.com/raphaelgruber/zk-serve/internal/render"
 	"github.com/raphaelgruber/zk-serve/internal/model"
 	"github.com/raphaelgruber/zk-serve/internal/zk"
@@ -13,13 +11,9 @@ templ Breadcrumb(segments []model.BreadcrumbSegment, currentTitle string) {
 		<a class="bc-seg" href="/">~</a>
 		for _, seg := range segments {
 			<span class="bc-sep">/</span>
-			<a
-				class="bc-seg"
-				href={ templ.SafeURL("/folder/" + seg.FolderPath) }
-				hx-get={ "/folder/" + seg.FolderPath }
-				hx-target="#content-col"
-				hx-push-url="true"
-			>{ seg.Name }</a>
+			@ContentLink("bc-seg", "/folder/" + seg.FolderPath) {
+				{ seg.Name }
+			}
 		}
 		<span class="bc-sep">/</span>
 		<span class="bc-seg current">{ currentTitle }</span>
@@ -27,7 +21,7 @@ templ Breadcrumb(segments []model.BreadcrumbSegment, currentTitle string) {
 }
 
 templ NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings []render.Heading) {
-	<details id="mob-toc-details" class="mob-toc">
+	<details id="mob-toc-details" class="mob-toc" aria-label="Table of contents">
 		<summary class="mob-toc-toggle">On this page</summary>
 		<div class="mob-toc-body">
 			for _, h := range headings {
@@ -36,16 +30,10 @@ templ NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings 
 		</div>
 	</details>
 	<article id="article">
-		<h1 id="article-title">
-			if note.Title != "" {
-				{ note.Title }
-			} else {
-				{ note.FilenameStem }
-			}
-		</h1>
+		<h1 id="article-title">{ note.DisplayTitle() }</h1>
 		<div class="article-meta">
 			<span class="article-meta-text">
-				Created: { note.Created.Format("2006-01-02") } · Modified: { note.Modified.Format("2006-01-02") } · { fmt.Sprint(note.WordCount) } words
+				Created: { note.Created.Format("2006-01-02") } · Modified: { note.Modified.Format("2006-01-02") } · { intStr(note.WordCount) } words
 			</span>
 			for _, tag := range note.Tags {
 				<a class="meta-tag" href={ templ.SafeURL("/?tags=" + tag) }>{ tag }</a>
@@ -59,13 +47,7 @@ templ NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings 
 			<section id="backlinks-section">
 				<h4>Referenced by</h4>
 				for _, link := range backlinks {
-					<a
-						class="backlink-card"
-						href={ templ.SafeURL("/note/" + link.SourcePath) }
-						hx-get={ "/note/" + link.SourcePath }
-						hx-target="#content-col"
-						hx-push-url="true"
-					>
+					@ContentLink("backlink-card", "/note/" + link.SourcePath) {
 						<span class="backlink-card-title">{ link.SourceTitle }</span>
 						if len(link.SourceTags) > 0 {
 							<span class="backlink-card-tags">
@@ -74,7 +56,7 @@ templ NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings 
 								}
 							</span>
 						}
-					</a>
+					}
 				}
 			</section>
 		}
@@ -83,35 +65,25 @@ templ NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings 
 
 templ FolderListing(folderName string, entries []model.FolderEntry) {
 	<article id="article">
-		<h1>{ folderName }<span style="color:var(--text-faint)">/</span></h1>
+		<h1>{ folderName }<span class="folder-slash">/</span></h1>
 		<hr class="article-divider"/>
 		if len(entries) > 0 {
 			<ul class="folder-list">
 				for _, entry := range entries {
 					<li class="folder-entry">
 						if entry.IsDir {
-							<a
-								class="folder-link folder-link--dir"
-								href={ templ.SafeURL("/folder/" + entry.Path) }
-								hx-get={ "/folder/" + entry.Path }
-								hx-target="#content-col"
-								hx-push-url="true"
-							><span class="folder-icon">▸</span>{ entry.Name }/</a>
+							@ContentLink("folder-link folder-link--dir", "/folder/" + entry.Path) {
+								<span class="folder-icon">▸</span>{ entry.Name }/
+							}
 						} else {
-							<a
-								class="folder-link"
-								href={ templ.SafeURL("/note/" + entry.Path) }
-								hx-get={ "/note/" + entry.Path }
-								hx-target="#content-col"
-								hx-push-url="true"
-							>
+							@ContentLink("folder-link", "/note/" + entry.Path) {
 								<span class="folder-icon">◦</span>
 								if entry.Title != "" {
 									{ entry.Title }
 								} else {
 									{ entry.Name }
 								}
-							</a>
+							}
 						}
 					</li>
 				}
@@ -124,11 +96,7 @@ templ FolderListing(folderName string, entries []model.FolderEntry) {
 
 templ NoteContentCol(segments []model.BreadcrumbSegment, note *zk.Note, noteHTML string, backlinks []zk.Link, headings []render.Heading) {
 	<div id="content-col">
-		if note.Title != "" {
-			@Breadcrumb(segments, note.Title)
-		} else {
-			@Breadcrumb(segments, note.FilenameStem)
-		}
+		@Breadcrumb(segments, note.DisplayTitle())
 		<div id="content-area">
 			@NoteArticle(note, noteHTML, backlinks, headings)
 		</div>

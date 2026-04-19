@@ -1,3 +1,5 @@
+import { esc } from './utils.js';
+
 const manifest = window.__ZK_MANIFEST || [];
 let selectedTags = [];
 let searchQuery = '';
@@ -122,8 +124,3 @@ function renderFilters() {
     ).join('');
 }
 
-function esc(s) {
-  const el = document.createElement('span');
-  el.textContent = s;
-  return el.innerHTML;
-}

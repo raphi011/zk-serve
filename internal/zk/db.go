@@ -31,6 +31,14 @@ type Note struct {
 	Checksum     string         `json:"checksum"`
 }
 
+// DisplayTitle returns Title if set, otherwise FilenameStem.
+func (n *Note) DisplayTitle() string {
+	if n.Title != "" {
+		return n.Title
+	}
+	return n.FilenameStem
+}
+
 // Tag represents a tag with its note count.
 type Tag struct {
 	ID        int    `json:"id"`
@@ -80,6 +88,43 @@ func (d *DB) NotebookPath() string {
 	return d.notebookPath
 }
 
+// scanNote reads one note row from the standard SELECT columns:
+// path, title, lead, word_count, created, modified, metadata, tags.
+func (d *DB) scanNote(rows *sql.Rows) (Note, error) {
+	var (
+		n           Note
+		createdRaw  string
+		modifiedRaw string
+		metadataRaw string
+		tagsRaw     string
+	)
+	if err := rows.Scan(&n.Path, &n.Title, &n.Lead, &n.WordCount, &createdRaw, &modifiedRaw, &metadataRaw, &tagsRaw); err != nil {
+		return Note{}, err
+	}
+	n.Filename = filepath.Base(n.Path)
+	n.FilenameStem = strings.TrimSuffix(n.Filename, ".md")
+	n.AbsPath = filepath.Join(d.notebookPath, n.Path)
+	if createdRaw != "" {
+		n.Created, _ = time.Parse(time.RFC3339Nano, createdRaw)
+		if n.Created.IsZero() {
+			n.Created, _ = time.Parse("2006-01-02 15:04:05", createdRaw)
+		}
+	}
+	if modifiedRaw != "" {
+		n.Modified, _ = time.Parse(time.RFC3339Nano, modifiedRaw)
+		if n.Modified.IsZero() {
+			n.Modified, _ = time.Parse("2006-01-02 15:04:05", modifiedRaw)
+		}
+	}
+	if tagsRaw != "" {
+		n.Tags = strings.Split(tagsRaw, "\x01")
+	}
+	if metadataRaw != "" {
+		_ = json.Unmarshal([]byte(metadataRaw), &n.Metadata)
+	}
+	return n, nil
+}
+
 // AllNotes returns every note ordered by sortable_path.
 func (d *DB) AllNotes() ([]Note, error) {
 	const query = `
@@ -95,40 +140,36 @@ func (d *DB) AllNotes() ([]Note, error) {
 
 	var notes []Note
 	for rows.Next() {
-		var (
-			n           Note
-			createdRaw  string
-			modifiedRaw string
-			metadataRaw string
-			tagsRaw     string
-		)
-		if err := rows.Scan(&n.Path, &n.Title, &n.Lead, &n.WordCount, &createdRaw, &modifiedRaw, &metadataRaw, &tagsRaw); err != nil {
+		n, err := d.scanNote(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan note: %w", err)
-		}
-		n.Filename = filepath.Base(n.Path)
-		n.FilenameStem = strings.TrimSuffix(n.Filename, ".md")
-		n.AbsPath = filepath.Join(d.notebookPath, n.Path)
-		if createdRaw != "" {
-			n.Created, _ = time.Parse(time.RFC3339Nano, createdRaw)
-			if n.Created.IsZero() {
-				n.Created, _ = time.Parse("2006-01-02 15:04:05", createdRaw)
-			}
-		}
-		if modifiedRaw != "" {
-			n.Modified, _ = time.Parse(time.RFC3339Nano, modifiedRaw)
-			if n.Modified.IsZero() {
-				n.Modified, _ = time.Parse("2006-01-02 15:04:05", modifiedRaw)
-			}
-		}
-		if tagsRaw != "" {
-			n.Tags = strings.Split(tagsRaw, "\x01")
-		}
-		if metadataRaw != "" {
-			_ = json.Unmarshal([]byte(metadataRaw), &n.Metadata)
 		}
 		notes = append(notes, n)
 	}
 	return notes, rows.Err()
+}
+
+// NoteByPath returns a single note by its relative path.
+func (d *DB) NoteByPath(path string) (*Note, error) {
+	const query = `
+		SELECT path, title, lead, word_count, created, modified, metadata, COALESCE(tags, '')
+		FROM notes_with_metadata
+		WHERE path = ?`
+
+	rows, err := d.db.Query(query, path)
+	if err != nil {
+		return nil, fmt.Errorf("query note by path: %w", err)
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return nil, nil
+	}
+	n, err := d.scanNote(rows)
+	if err != nil {
+		return nil, fmt.Errorf("scan note by path: %w", err)
+	}
+	return &n, rows.Err()
 }
 
 // AllTags returns all tags sorted by name with their note counts.
@@ -276,36 +317,9 @@ func (d *DB) NotesByDate(date string) ([]Note, error) {
 
 	var notes []Note
 	for rows.Next() {
-		var (
-			n           Note
-			createdRaw  string
-			modifiedRaw string
-			metadataRaw string
-			tagsRaw     string
-		)
-		if err := rows.Scan(&n.Path, &n.Title, &n.Lead, &n.WordCount, &createdRaw, &modifiedRaw, &metadataRaw, &tagsRaw); err != nil {
+		n, err := d.scanNote(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan note by date: %w", err)
-		}
-		n.Filename = filepath.Base(n.Path)
-		n.FilenameStem = strings.TrimSuffix(n.Filename, ".md")
-		n.AbsPath = filepath.Join(d.notebookPath, n.Path)
-		if createdRaw != "" {
-			n.Created, _ = time.Parse(time.RFC3339Nano, createdRaw)
-			if n.Created.IsZero() {
-				n.Created, _ = time.Parse("2006-01-02 15:04:05", createdRaw)
-			}
-		}
-		if modifiedRaw != "" {
-			n.Modified, _ = time.Parse(time.RFC3339Nano, modifiedRaw)
-			if n.Modified.IsZero() {
-				n.Modified, _ = time.Parse("2006-01-02 15:04:05", modifiedRaw)
-			}
-		}
-		if tagsRaw != "" {
-			n.Tags = strings.Split(tagsRaw, "\x01")
-		}
-		if metadataRaw != "" {
-			_ = json.Unmarshal([]byte(metadataRaw), &n.Metadata)
 		}
 		notes = append(notes, n)
 	}

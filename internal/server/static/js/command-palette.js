@@ -1,3 +1,5 @@
+import { esc } from './utils.js';
+
 const manifest = window.__ZK_MANIFEST || [];
 let focusIdx = 0;
 
@@ -43,7 +45,7 @@ export function initCommandPalette() {
       const focused = els[focusIdx];
       if (focused?.dataset.href) {
         dialog.close();
-        htmx.ajax('GET', focused.dataset.href, { target: '#content-col', swap: 'outerHTML' });
+        htmx.ajax('GET', focused.dataset.href, { target: '#content-col', swap: 'innerHTML' });
         history.pushState({}, '', focused.dataset.href);
       }
     }
@@ -53,7 +55,7 @@ export function initCommandPalette() {
     const item = e.target.closest('.cmd-item');
     if (item?.dataset.href) {
       dialog.close();
-      htmx.ajax('GET', item.dataset.href, { target: '#content-col', swap: 'outerHTML' });
+      htmx.ajax('GET', item.dataset.href, { target: '#content-col', swap: 'innerHTML' });
       history.pushState({}, '', item.dataset.href);
     }
   });
@@ -113,8 +115,3 @@ function highlight(text, query) {
   return escaped.replace(re, '<mark>$1</mark>');
 }
 
-function esc(s) {
-  const el = document.createElement('span');
-  el.textContent = s || '';
-  return el.innerHTML;
-}

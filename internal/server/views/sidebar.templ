@@ -1,8 +1,6 @@
 package views
 
 import (
-	"fmt"
-
 	"github.com/raphaelgruber/zk-serve/internal/model"
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
@@ -40,14 +38,14 @@ templ Tree(nodes []*model.FileNode) {
 
 templ TagList(tags []zk.Tag) {
 	<div class="resize-handle-v server-tree" data-resize-target="next"></div>
-	<details class="sidebar-tags-section server-tree" open>
+	<details class="sidebar-tags-section server-tree" open aria-label="Tags">
 		<summary class="sidebar-section-label">
-			Tags <span class="sidebar-tag-count">{ fmt.Sprint(len(tags)) }</span>
+			Tags <span class="sidebar-tag-count">{ lenStr(tags) }</span>
 		</summary>
 		<div class="sidebar-tags-body">
 			for _, tag := range tags {
 				<span class="sidebar-tag-item" data-tag={ tag.Name }>
-					{ tag.Name } <span class="tag-count">{ fmt.Sprint(tag.NoteCount) }</span>
+					{ tag.Name } <span class="tag-count">{ intStr(tag.NoteCount) }</span>
 				</span>
 			}
 		</div>

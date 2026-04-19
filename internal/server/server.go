@@ -32,6 +32,7 @@ type Store interface {
 type Server struct {
 	mux         *http.ServeMux
 	store       Store
+	cache       *noteCache
 	chromaDark  []byte
 	chromaLight []byte
 }
@@ -46,9 +47,14 @@ func New(store Store) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("chroma light css: %w", err)
 	}
+	cache, err := buildNoteCache(store)
+	if err != nil {
+		return nil, fmt.Errorf("build note cache: %w", err)
+	}
 	s := &Server{
 		mux:         http.NewServeMux(),
 		store:       store,
+		cache:       cache,
 		chromaDark:  dark,
 		chromaLight: light,
 	}

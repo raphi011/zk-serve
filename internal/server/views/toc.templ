@@ -26,7 +26,7 @@ templ TOCPanel(headings []render.Heading, outgoing []zk.Link, backlinks []zk.Lin
 		}
 		if len(outgoing) > 0 {
 			<div class="resize-handle-v" data-resize-target="next"></div>
-			<details class="toc-links-section" open>
+			<details class="toc-links-section" open aria-label="Outgoing links">
 				<summary class="toc-links-label">Links <span class="tl-count">{ lenStr(outgoing) }</span></summary>
 				<div class="toc-links-body">
 					for _, link := range outgoing {
@@ -39,19 +39,13 @@ templ TOCPanel(headings []render.Heading, outgoing []zk.Link, backlinks []zk.Lin
 								}
 							</a>
 						} else if link.TargetPath != "" {
-							<a
-								class="toc-link-item toc-link-out"
-								href={ templ.SafeURL("/note/" + link.TargetPath) }
-								hx-get={ "/note/" + link.TargetPath }
-								hx-target="#content-col"
-								hx-push-url="true"
-							>
+							@ContentLink("toc-link-item toc-link-out", "/note/" + link.TargetPath) {
 								if link.TargetTitle != "" {
 									{ link.TargetTitle }
 								} else {
 									{ link.Href }
 								}
-							</a>
+							}
 						} else {
 							<span class="toc-link-item toc-link-out">{ link.Href }</span>
 						}
@@ -61,17 +55,13 @@ templ TOCPanel(headings []render.Heading, outgoing []zk.Link, backlinks []zk.Lin
 		}
 		if len(backlinks) > 0 {
 			<div class="resize-handle-v" data-resize-target="next"></div>
-			<details class="toc-links-section" open>
+			<details class="toc-links-section" open aria-label="Backlinks">
 				<summary class="toc-links-label">Backlinks <span class="tl-count">{ lenStr(backlinks) }</span></summary>
 				<div class="toc-links-body">
 					for _, link := range backlinks {
-						<a
-							class="toc-link-item toc-link-in"
-							href={ templ.SafeURL("/note/" + link.SourcePath) }
-							hx-get={ "/note/" + link.SourcePath }
-							hx-target="#content-col"
-							hx-push-url="true"
-						>{ link.SourceTitle }</a>
+						@ContentLink("toc-link-item toc-link-in", "/note/" + link.SourcePath) {
+							{ link.SourceTitle }
+						}
 					}
 				</div>
 			</details>
