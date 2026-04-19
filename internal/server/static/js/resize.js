@@ -55,7 +55,8 @@ function setupVerticalHandles() {
       function onMove(e) {
         const delta = e.clientY - startY;
         const height = Math.max(40, startHeight - delta);
-        target.style.maxHeight = height + 'px';
+        target.style.height = height + 'px';
+        target.style.maxHeight = 'none';
       }
 
       function onUp() {
