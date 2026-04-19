@@ -436,8 +436,11 @@ details[open] > .tree-folder > .tree-chevron {
   padding: 4px 10px 8px;
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 3px;
-  max-height: 180px;
+  height: 150px;
+  min-height: 40px;
+  max-height: 50vh;
   overflow-y: auto;
   resize: vertical;
   scrollbar-width: thin;
@@ -910,7 +913,8 @@ a.backlink-card, .backlink-card {
   background: var(--surface);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 
   #toc-header {
     height: 35px;
@@ -1007,11 +1011,14 @@ a.backlink-card, .backlink-card {
 
 .toc-links-body,
 .toc-tags-body {
-  max-height: 150px;
   overflow-y: auto;
+  height: 120px;
+  min-height: 40px;
+  max-height: 50vh;
   resize: vertical;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+  border-bottom: 1px solid var(--border);
 }
 
 .toc-links-body {
@@ -1023,6 +1030,7 @@ a.backlink-card, .backlink-card {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  align-content: flex-start;
 }
 
 .toc-link-item {
