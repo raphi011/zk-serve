@@ -24,6 +24,8 @@ type Store interface {
 	OutgoingLinks(path string) ([]zk.Link, error)
 	Backlinks(path string) ([]zk.Link, error)
 	NotebookPath() string
+	ActivityDays(year, month int) (map[int]bool, error)
+	NotesByDate(date string) ([]zk.Note, error)
 }
 
 // Server wires routes and holds shared state.

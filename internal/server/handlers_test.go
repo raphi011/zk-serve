@@ -17,6 +17,7 @@ type stubStore struct {
 	tags         []zk.Tag
 	outLinks     []zk.Link
 	backLinks    []zk.Link
+	activeDays   map[int]bool
 	notebookPath string
 }
 
@@ -26,6 +27,8 @@ func (s *stubStore) Search(q string, tags []string) ([]zk.Note, error) { return 
 func (s *stubStore) OutgoingLinks(path string) ([]zk.Link, error)      { return s.outLinks, nil }
 func (s *stubStore) Backlinks(path string) ([]zk.Link, error)          { return s.backLinks, nil }
 func (s *stubStore) NotebookPath() string                              { return s.notebookPath }
+func (s *stubStore) ActivityDays(year, month int) (map[int]bool, error) { return s.activeDays, nil }
+func (s *stubStore) NotesByDate(date string) ([]zk.Note, error)        { return s.notes, nil }
 
 var testNotes = []zk.Note{
 	{
