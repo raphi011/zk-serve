@@ -93,7 +93,10 @@ function render() {
   } else {
     container.innerHTML = results.map(n => `
       <div class="result-item">
-        <a class="result-link" href="/note/${encodeURI(n.path)}">
+        <a class="result-link" href="/note/${encodeURI(n.path)}"
+           hx-get="/note/${encodeURI(n.path)}"
+           hx-target="#content-col"
+           hx-push-url="true">
           <div class="result-title">${esc(n.title || n.path)}</div>
         </a>
         ${n.tags.length ? `<div class="result-tags">${n.tags.map(t =>
@@ -104,6 +107,7 @@ function render() {
   }
 
   sidebarInner.appendChild(container);
+  htmx.process(container);
 }
 
 function renderFilters() {
