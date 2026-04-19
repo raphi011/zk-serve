@@ -38,7 +38,7 @@ templ Tree(nodes []*model.FileNode) {
 	}
 }
 
-templ TagCloud(tags []zk.Tag) {
+templ TagList(tags []zk.Tag) {
 	<div class="resize-handle-v server-tree" data-resize-target="next"></div>
 	<details class="sidebar-tags-section server-tree" open>
 		<summary class="sidebar-section-label">
@@ -46,7 +46,7 @@ templ TagCloud(tags []zk.Tag) {
 		</summary>
 		<div class="sidebar-tags-body">
 			for _, tag := range tags {
-				<span class="tag-pill" data-tag={ tag.Name }>
+				<span class="sidebar-tag-item" data-tag={ tag.Name }>
 					{ tag.Name } <span class="tag-count">{ fmt.Sprint(tag.NoteCount) }</span>
 				</span>
 			}
@@ -67,6 +67,6 @@ templ Sidebar(nodes []*model.FileNode, tags []zk.Tag) {
 		}
 	</div>
 	if len(tags) > 0 {
-		@TagCloud(tags)
+		@TagList(tags)
 	}
 }

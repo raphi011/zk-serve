@@ -92,17 +92,15 @@ function render() {
     container.innerHTML = '<div class="sidebar-empty">No results</div>';
   } else {
     container.innerHTML = results.map(n => `
-      <div class="result-item">
-        <a class="result-link" href="/note/${encodeURI(n.path)}"
-           hx-get="/note/${encodeURI(n.path)}"
-           hx-target="#content-col"
-           hx-push-url="true">
-          <div class="result-title">${esc(n.title || n.path)}</div>
-        </a>
+      <a class="result-item" href="/note/${encodeURI(n.path)}"
+         hx-get="/note/${encodeURI(n.path)}"
+         hx-target="#content-col"
+         hx-push-url="true">
+        <div class="result-title">${esc(n.title || n.path)}</div>
         ${n.tags.length ? `<div class="result-tags">${n.tags.map(t =>
-          `<span class="result-tag" data-tag="${esc(t)}">${esc(t)}</span>`
+          `<span class="result-tag">${esc(t)}</span>`
         ).join('')}</div>` : ''}
-      </div>
+      </a>
     `).join('');
   }
 

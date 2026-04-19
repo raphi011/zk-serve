@@ -5,6 +5,7 @@ import { initSidebar } from './sidebar.js';
 import { initCommandPalette } from './command-palette.js';
 import { initHTMXHooks } from './htmx-hooks.js';
 import { initCalendar } from './calendar.js';
+import { initKeys } from './keys.js';
 
 initTheme();
 initResize();
@@ -13,3 +14,4 @@ initSidebar();
 initCommandPalette();
 initHTMXHooks();
 initCalendar();
+initKeys();

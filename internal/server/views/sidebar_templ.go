@@ -189,7 +189,7 @@ func Tree(nodes []*model.FileNode) templ.Component {
 	})
 }
 
-func TagCloud(tags []zk.Tag) templ.Component {
+func TagList(tags []zk.Tag) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -228,14 +228,14 @@ func TagCloud(tags []zk.Tag) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		for _, tag := range tags {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"tag-pill\" data-tag=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"sidebar-tag-item\" data-tag=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(tag.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/views/sidebar.templ`, Line: 49, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/views/sidebar.templ`, Line: 49, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -324,7 +324,7 @@ func Sidebar(nodes []*model.FileNode, tags []zk.Tag) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(tags) > 0 {
-			templ_7745c5c3_Err = TagCloud(tags).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = TagList(tags).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -6,30 +6,32 @@ import (
 
 templ SearchResults(notes []zk.Note) {
 	for _, note := range notes {
-		<div class="result-item">
-			<a class="result-link" href={ templ.SafeURL("/note/" + note.Path) }>
-				<div class="result-title">
-					if note.Title != "" {
-						{ note.Title }
-					} else {
-						{ note.FilenameStem }
-					}
-				</div>
-				<div class="result-meta">{ note.Modified.Format("2006-01-02") }</div>
-				if note.Snippet != "" {
-					<div class="result-snippet">
-						@templ.Raw(safeSnippet(note.Snippet))
-					</div>
+		<a class="result-item" href={ templ.SafeURL("/note/" + note.Path) }
+			hx-get={ "/note/" + note.Path }
+			hx-target="#content-col"
+			hx-push-url="true"
+		>
+			<div class="result-title">
+				if note.Title != "" {
+					{ note.Title }
+				} else {
+					{ note.FilenameStem }
 				}
-			</a>
+			</div>
+			<div class="result-meta">{ note.Modified.Format("2006-01-02") }</div>
+			if note.Snippet != "" {
+				<div class="result-snippet">
+					@templ.Raw(safeSnippet(note.Snippet))
+				</div>
+			}
 			if len(note.Tags) > 0 {
 				<div class="result-tags">
 					for _, tag := range note.Tags {
-						<span class="result-tag" data-tag={ tag }>{ tag }</span>
+						<span class="result-tag">{ tag }</span>
 					}
 				</div>
 			}
-		</div>
+		</a>
 	}
 }
 

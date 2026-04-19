@@ -460,43 +460,38 @@ details[open] > .tree-folder > .tree-chevron {
 }
 
 .sidebar-tags-body {
-  padding: 4px 10px 8px;
+  padding: 2px 0 4px;
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 3px;
+  flex-direction: column;
   max-height: 25vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
 
-.tags-list {
-  padding: 4px 10px 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-
-.tag-pill {
+.sidebar-tag-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 2px 14px;
   font-size: 11px;
-  font-family: var(--font-ui);
-  color: var(--accent-tag);
+  font-family: var(--font-prose);
+  color: var(--text-muted);
   cursor: pointer;
-  padding: 2px 5px;
-  border-radius: 3px;
-  border: 1px solid transparent;
-  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.1s, background 0.1s;
+  line-height: 1.65;
 
-  &:hover { background: var(--accent-soft); border-color: var(--accent-soft); }
-  &.selected { background: var(--accent-soft); border-color: var(--accent); }
+  &:hover { color: var(--accent); background: var(--bg-hover); }
 
   .tag-count {
     font-size: 10px;
     color: var(--text-faint);
+    flex-shrink: 0;
+    margin-left: 8px;
   }
 }
 
@@ -512,12 +507,6 @@ details[open] > .tree-folder > .tree-chevron {
 
   &:hover { background: var(--bg-hover); }
   &.active { background: var(--bg-active); }
-}
-
-.result-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
 }
 
 .result-title {
@@ -569,10 +558,7 @@ details[open] > .tree-folder > .tree-chevron {
   background: var(--accent-soft);
   border-radius: 2px;
   padding: 0 3px;
-  cursor: pointer;
   line-height: 1.5;
-
-  &:hover { background: var(--accent-tag); color: oklch(1 0 0); }
 }
 
 .sidebar-empty {
@@ -1072,21 +1058,6 @@ a.backlink-card, .backlink-card {
   }
 }
 
-.toc-tag-pill {
-  font-size: 11px;
-  font-family: var(--font-ui);
-  color: var(--accent-tag);
-  background: var(--accent-soft);
-  border-radius: 3px;
-  padding: 1px 6px;
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s;
-  border: 1px solid transparent;
-  text-decoration: none;
-
-  &:hover { background: var(--accent); color: oklch(1 0 0); }
-}
-
 .toc-item {
   display: block;
   padding: 3px 14px;
@@ -1445,7 +1416,7 @@ a.backlink-card, .backlink-card {
 
   .tree-item, .tree-folder { padding-top: 5px; padding-bottom: 5px; }
   .result-item { padding: 10px 12px; }
-  .tag-pill { padding: 4px 7px; font-size: 12px; }
+  .sidebar-tag-item { padding-top: 5px; padding-bottom: 5px; }
   .filter-chip { padding: 3px 10px 3px 11px; font-size: 12px; }
 
   #cmd-dialog[open] {
