@@ -1,0 +1,27 @@
+{{define "folder"}}
+<article class="folder-view">
+  <header class="note-header">
+    <h1 class="note-header__title folder-view__title">{{.FolderName}}<span class="folder-view__slash">/</span></h1>
+    <hr class="note-header__divider" />
+  </header>
+  {{if .FolderEntries}}
+  <ul class="folder-view__list">
+    {{range .FolderEntries}}
+    <li class="folder-view__item{{if .IsDir}} folder-view__item--dir{{end}}">
+      {{if .IsDir}}
+      <a class="folder-view__link" href="/folder/{{.Path}}">
+        <span class="folder-view__icon">▸</span>{{.Name}}/
+      </a>
+      {{else}}
+      <a class="folder-view__link" href="/note/{{.Path}}">
+        <span class="folder-view__icon">◦</span>{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}
+      </a>
+      {{end}}
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="folder-view__empty">Empty folder.</p>
+  {{end}}
+</article>
+{{end}}

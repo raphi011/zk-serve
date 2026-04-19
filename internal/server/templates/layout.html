@@ -78,8 +78,16 @@
   </nav>
 
   <main class="content" id="content">
+    {{if or .NoteHTML .FolderName}}
+    <nav class="breadcrumb">
+      <a class="breadcrumb__item" href="/">~</a>
+      {{range .Breadcrumbs}}<span class="breadcrumb__sep">/</span><a class="breadcrumb__item" href="/folder/{{.FolderPath}}">{{.Name}}</a>{{end}}<span class="breadcrumb__sep">/</span>{{if .CurrentNote}}<span class="breadcrumb__current">{{if .CurrentNote.Title}}{{.CurrentNote.Title}}{{else}}{{.CurrentNote.FilenameStem}}{{end}}</span>{{else}}<span class="breadcrumb__current">{{.FolderName}}</span>{{end}}
+    </nav>
+    {{end}}
     {{if .NoteHTML}}
       {{template "note" .}}
+    {{else if .FolderName}}
+      {{template "folder" .}}
     {{else}}
       <div class="content--empty">Select a note to read it.</div>
     {{end}}

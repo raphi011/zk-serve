@@ -111,17 +111,27 @@ func buildTree(notes []zk.Note, activePath string) []*FileNode {
 	return nodes
 }
 
+// FolderEntry is one item (file or subdirectory) in a folder listing.
+type FolderEntry struct {
+	Name  string
+	Path  string
+	Title string
+	IsDir bool
+}
+
 type pageData struct {
-	Title       string
-	Query       string
-	ActiveTag   string
-	ActivePath  string
-	Tags        []zk.Tag
-	Notes       []zk.Note
-	Tree        []*FileNode
-	CurrentNote *zk.Note
-	NoteHTML    template.HTML
-	Breadcrumbs []BreadcrumbSegment
+	Title         string
+	Query         string
+	ActiveTag     string
+	ActivePath    string
+	Tags          []zk.Tag
+	Notes         []zk.Note
+	Tree          []*FileNode
+	CurrentNote   *zk.Note
+	NoteHTML      template.HTML
+	Breadcrumbs   []BreadcrumbSegment
+	FolderName    string
+	FolderEntries []FolderEntry
 }
 
 func (d *pageData) IsActiveTag(name string) bool  { return d.ActiveTag == name }
@@ -245,6 +255,89 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		CurrentNote: note,
 		NoteHTML:    template.HTML(rendered),
 		Breadcrumbs: buildBreadcrumbs(notePath),
+	})
+}
+
+func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
+	folderPath := r.PathValue("path")
+	if folderPath == "" {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	notes, err := s.zkClient.List("", nil)
+	if err != nil {
+		http.Error(w, "failed to list notes: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tags, _ := s.zkClient.TagList()
+
+	// Serve index.md if it exists in this folder.
+	indexPath := folderPath + "/index.md"
+	for i := range notes {
+		if notes[i].Path == indexPath {
+			note := &notes[i]
+			raw, err := os.ReadFile(note.AbsPath)
+			if err != nil {
+				http.Error(w, "failed to read note: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			lookup := make(map[string]string, len(notes)*2)
+			for _, n := range notes {
+				lookup[n.FilenameStem] = n.Path
+				lookup[strings.TrimSuffix(n.Path, ".md")] = n.Path
+			}
+			rendered, err := render.Markdown(raw, lookup)
+			if err != nil {
+				http.Error(w, "failed to render note: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			renderTemplate(w, s.tmpl, "layout.html", &pageData{
+				Title:       note.Title,
+				ActivePath:  note.Path,
+				Tags:        tags,
+				Tree:        buildTree(notes, note.Path),
+				CurrentNote: note,
+				NoteHTML:    template.HTML(rendered),
+				Breadcrumbs: buildBreadcrumbs(note.Path),
+			})
+			return
+		}
+	}
+
+	// Build directory listing from notes whose path starts with folderPath/.
+	prefix := folderPath + "/"
+	seen := map[string]bool{}
+	var entries []FolderEntry
+	for _, n := range notes {
+		if !strings.HasPrefix(n.Path, prefix) {
+			continue
+		}
+		rest := strings.TrimPrefix(n.Path, prefix)
+		parts := strings.SplitN(rest, "/", 2)
+		if len(parts) == 1 {
+			entries = append(entries, FolderEntry{Name: parts[0], Path: n.Path, Title: n.Title})
+		} else if !seen[parts[0]] {
+			seen[parts[0]] = true
+			entries = append(entries, FolderEntry{Name: parts[0], Path: folderPath + "/" + parts[0], IsDir: true})
+		}
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].IsDir != entries[j].IsDir {
+			return entries[i].IsDir
+		}
+		return strings.ToLower(entries[i].Name) < strings.ToLower(entries[j].Name)
+	})
+
+	parts := strings.Split(folderPath, "/")
+	folderName := parts[len(parts)-1]
+
+	renderTemplate(w, s.tmpl, "layout.html", &pageData{
+		Title:         folderName,
+		Tags:          tags,
+		Tree:          buildTree(notes, ""),
+		Breadcrumbs:   buildBreadcrumbs(folderPath),
+		FolderName:    folderName,
+		FolderEntries: entries,
 	})
 }
 

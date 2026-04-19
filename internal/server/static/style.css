@@ -428,6 +428,45 @@ article {
 .prose pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
 .prose .chroma { background: var(--surface) !important; }
 
+/* ── Folder view ─────────────────────────────────────────── */
+
+.folder-view { width: 100%; max-width: 760px; }
+
+.folder-view__title { font-family: var(--font-prose); }
+.folder-view__slash { color: var(--muted); margin-left: 2px; }
+
+.folder-view__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.folder-view__item { list-style: none; }
+
+.folder-view__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: 4px;
+  border-left: 2px solid transparent;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.folder-view__link:hover { color: var(--accent); background: var(--surface); border-left-color: var(--accent); }
+
+.folder-view__item--dir .folder-view__link { color: var(--muted); }
+.folder-view__item--dir .folder-view__link:hover { color: var(--accent); }
+
+.folder-view__icon { font-size: 8px; opacity: 0.5; flex-shrink: 0; }
+.folder-view__item--dir .folder-view__icon { font-size: 9px; }
+
+.folder-view__empty { color: var(--muted); font-size: 13px; font-style: italic; }
+
 .prose pre.mermaid {
   background: var(--surface) !important;
   border: 1px solid var(--border);
