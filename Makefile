@@ -1,4 +1,4 @@
-.PHONY: assets build test
+.PHONY: assets generate build test
 
 HTMX_URL    := https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js
 MERMAID_URL := https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js
@@ -8,7 +8,10 @@ assets:
 	curl -fsSL $(HTMX_URL)    -o $(STATIC)/htmx.min.js
 	curl -fsSL $(MERMAID_URL) -o $(STATIC)/mermaid.min.js
 
-build: assets
+generate:
+	templ generate ./internal/server/views/
+
+build: assets generate
 	go build -o bin/zk-serve ./cmd/zk-serve
 
 test:
