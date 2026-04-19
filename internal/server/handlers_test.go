@@ -13,13 +13,17 @@ import (
 )
 
 type stubStore struct {
-	notes []zk.Note
-	tags  []zk.Tag
+	notes     []zk.Note
+	tags      []zk.Tag
+	outLinks  []zk.Link
+	backLinks []zk.Link
 }
 
 func (s *stubStore) AllNotes() ([]zk.Note, error)                      { return s.notes, nil }
 func (s *stubStore) AllTags() ([]zk.Tag, error)                        { return s.tags, nil }
 func (s *stubStore) Search(q string, tags []string) ([]zk.Note, error) { return s.notes, nil }
+func (s *stubStore) OutgoingLinks(path string) ([]zk.Link, error)      { return s.outLinks, nil }
+func (s *stubStore) Backlinks(path string) ([]zk.Link, error)          { return s.backLinks, nil }
 
 var testNotes = []zk.Note{
 	{
@@ -119,6 +123,36 @@ func TestNoteHandlerNotFound(t *testing.T) {
 	h.ServeHTTP(w, req)
 	if w.Code != http.StatusNotFound {
 		t.Errorf("status = %d, want 404", w.Code)
+	}
+}
+
+func TestNoteHandlerIncludesManifest(t *testing.T) {
+	// TODO: This test will pass once templates emit {{.ManifestJSON}} (Task 6).
+	t.Skip("templates do not yet render ManifestJSON")
+
+	dir := t.TempDir()
+	notePath := dir + "/test-note.md"
+	if err := os.WriteFile(notePath, []byte("## Section\n\nContent.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	notes := []zk.Note{
+		{
+			Filename: "test-note.md", FilenameStem: "test-note",
+			Path: "test-note.md", AbsPath: notePath,
+			Title: "Test Note", Tags: []string{"go"},
+			Modified: time.Now(), Created: time.Now(),
+		},
+	}
+	h := newTestServer(t, notes, testTags)
+	req := httptest.NewRequest("GET", "/note/test-note.md", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	body := w.Body.String()
+	if !strings.Contains(body, "__ZK_MANIFEST") {
+		t.Error("expected __ZK_MANIFEST in page")
+	}
+	if !strings.Contains(body, "test-note.md") {
+		t.Error("expected note path in manifest")
 	}
 }
 

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -129,9 +130,32 @@ type pageData struct {
 	Tree          []*FileNode
 	CurrentNote   *zk.Note
 	NoteHTML      template.HTML
+	Headings      []render.Heading
+	OutgoingLinks []zk.Link
+	Backlinks     []zk.Link
 	Breadcrumbs   []BreadcrumbSegment
 	FolderName    string
 	FolderEntries []FolderEntry
+	ManifestJSON  template.JS
+}
+
+type manifestEntry struct {
+	Title string   `json:"title"`
+	Path  string   `json:"path"`
+	Tags  []string `json:"tags"`
+}
+
+func buildManifest(notes []zk.Note) template.JS {
+	entries := make([]manifestEntry, len(notes))
+	for i, n := range notes {
+		tags := n.Tags
+		if tags == nil {
+			tags = []string{}
+		}
+		entries[i] = manifestEntry{Title: n.Title, Path: n.Path, Tags: tags}
+	}
+	b, _ := json.Marshal(entries)
+	return template.JS(b)
 }
 
 func (d *pageData) IsActiveTag(name string) bool  { return d.ActiveTag == name }
@@ -152,7 +176,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to list notes: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderTemplate(w, s.tmpl, "layout.html", &pageData{Tags: tags, Tree: buildTree(notes, "")})
+	renderTemplate(w, s.tmpl, "layout.html", &pageData{Tags: tags, Tree: buildTree(notes, ""), ManifestJSON: buildManifest(notes)})
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
@@ -247,14 +271,20 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tags, _ := s.store.AllTags()
+	outLinks, _ := s.store.OutgoingLinks(notePath)
+	backlinks, _ := s.store.Backlinks(notePath)
 	renderTemplate(w, s.tmpl, "layout.html", &pageData{
-		Title:       note.Title,
-		ActivePath:  notePath,
-		Tags:        tags,
-		Tree:        buildTree(notes, notePath),
-		CurrentNote: note,
-		NoteHTML:    template.HTML(result.HTML),
-		Breadcrumbs: buildBreadcrumbs(notePath),
+		Title:         note.Title,
+		ActivePath:    notePath,
+		Tags:          tags,
+		Tree:          buildTree(notes, notePath),
+		CurrentNote:   note,
+		NoteHTML:      template.HTML(result.HTML),
+		Headings:      result.Headings,
+		OutgoingLinks: outLinks,
+		Backlinks:     backlinks,
+		Breadcrumbs:   buildBreadcrumbs(notePath),
+		ManifestJSON:  buildManifest(notes),
 	})
 }
 
@@ -291,14 +321,20 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "failed to render note: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
+			outLinks, _ := s.store.OutgoingLinks(note.Path)
+			backlinks, _ := s.store.Backlinks(note.Path)
 			renderTemplate(w, s.tmpl, "layout.html", &pageData{
-				Title:       note.Title,
-				ActivePath:  note.Path,
-				Tags:        tags,
-				Tree:        buildTree(notes, note.Path),
-				CurrentNote: note,
-				NoteHTML:    template.HTML(result.HTML),
-				Breadcrumbs: buildBreadcrumbs(note.Path),
+				Title:         note.Title,
+				ActivePath:    note.Path,
+				Tags:          tags,
+				Tree:          buildTree(notes, note.Path),
+				CurrentNote:   note,
+				NoteHTML:      template.HTML(result.HTML),
+				Headings:      result.Headings,
+				OutgoingLinks: outLinks,
+				Backlinks:     backlinks,
+				Breadcrumbs:   buildBreadcrumbs(note.Path),
+				ManifestJSON:  buildManifest(notes),
 			})
 			return
 		}
@@ -338,6 +374,7 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 		Breadcrumbs:   buildBreadcrumbs(folderPath),
 		FolderName:    folderName,
 		FolderEntries: entries,
+		ManifestJSON:  buildManifest(notes),
 	})
 }
 

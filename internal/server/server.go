@@ -46,6 +46,8 @@ type Store interface {
 	AllNotes() ([]zk.Note, error)
 	AllTags() ([]zk.Tag, error)
 	Search(q string, tags []string) ([]zk.Note, error)
+	OutgoingLinks(path string) ([]zk.Link, error)
+	Backlinks(path string) ([]zk.Link, error)
 }
 
 // Server wires routes and holds shared state.
