@@ -465,6 +465,7 @@ details[open] > .tree-folder > .tree-chevron {
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 3px;
+  max-height: 25vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
