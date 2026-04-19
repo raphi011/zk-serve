@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 
 	"github.com/spf13/cobra"
@@ -11,16 +12,6 @@ import (
 	"github.com/raphaelgruber/zk-serve/internal/server"
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
-
-// clientAdapter wraps *zk.Client to satisfy server.Store until main.go
-// is switched to use zk.DB directly (Task 8).
-type clientAdapter struct {
-	c *zk.Client
-}
-
-func (a *clientAdapter) AllNotes() ([]zk.Note, error)                      { return a.c.List("", nil) }
-func (a *clientAdapter) AllTags() ([]zk.Tag, error)                        { return a.c.TagList() }
-func (a *clientAdapter) Search(q string, tags []string) ([]zk.Note, error) { return a.c.List(q, tags) }
 
 func main() {
 	var (
@@ -41,11 +32,16 @@ dark-academic web viewer with live search, tag filtering, and Markdown rendering
 			if notebook == "" {
 				return fmt.Errorf("notebook path required: use --notebook or set ZK_NOTEBOOK_DIR")
 			}
-			if _, err := exec.LookPath("zk"); err != nil {
-				return fmt.Errorf("zk CLI not found in PATH: %w", err)
+			dbPath := filepath.Join(notebook, ".zk", "notebook.db")
+			if _, err := os.Stat(dbPath); err != nil {
+				return fmt.Errorf("notebook database not found at %s — run 'zk index' first: %w", dbPath, err)
 			}
-			zkClient := zk.NewClient(notebook)
-			srv, err := server.New(&clientAdapter{c: zkClient})
+			store, err := zk.OpenDB(dbPath, notebook)
+			if err != nil {
+				return fmt.Errorf("open notebook db: %w", err)
+			}
+			defer store.Close()
+			srv, err := server.New(store)
 			if err != nil {
 				return fmt.Errorf("init server: %w", err)
 			}

@@ -6,9 +6,38 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
+
+// Note represents a single note from the zk notebook.
+type Note struct {
+	Filename     string         `json:"filename"`
+	FilenameStem string         `json:"filenameStem"`
+	Path         string         `json:"path"`
+	AbsPath      string         `json:"absPath"`
+	Title        string         `json:"title"`
+	Lead         string         `json:"lead"`
+	Snippet      string         `json:"snippet,omitempty"`
+	Body         string         `json:"body"`
+	Snippets     []string       `json:"snippets"`
+	RawContent   string         `json:"rawContent"`
+	WordCount    int            `json:"wordCount"`
+	Tags         []string       `json:"tags"`
+	Metadata     map[string]any `json:"metadata"`
+	Created      time.Time      `json:"created"`
+	Modified     time.Time      `json:"modified"`
+	Checksum     string         `json:"checksum"`
+}
+
+// Tag represents a tag with its note count.
+type Tag struct {
+	ID        int    `json:"id"`
+	Kind      string `json:"kind"`
+	Name      string `json:"name"`
+	NoteCount int    `json:"noteCount"`
+}
 
 // DB provides read-only access to a zk notebook's SQLite database.
 type DB struct {
