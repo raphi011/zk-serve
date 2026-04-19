@@ -23,6 +23,12 @@ export function initHTMXHooks() {
     const contentArea = document.getElementById('content-area');
     if (contentArea) contentArea.scrollTop = 0;
   });
+
+  // Re-init resize handles after calendar month navigation.
+  document.body.addEventListener('htmx:afterSwap', (e) => {
+    if (e.detail.target.id !== 'calendar') return;
+    initResize();
+  });
 }
 
 function updateTreeActive() {
