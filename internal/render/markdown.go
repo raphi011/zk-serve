@@ -3,6 +3,7 @@ package render
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/yuin/goldmark"
@@ -163,6 +164,37 @@ func (hc *headingCollector) Transform(doc *ast.Document, reader text.Reader, pc 
 	})
 }
 
+// externalLinkRenderer adds target="_blank" rel="noopener" to external links.
+type externalLinkRenderer struct{}
+
+func (r *externalLinkRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
+	reg.Register(ast.KindLink, r.renderLink)
+}
+
+func (r *externalLinkRenderer) renderLink(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+	n := node.(*ast.Link)
+	dest := string(n.Destination)
+	isExternal := strings.HasPrefix(dest, "http://") || strings.HasPrefix(dest, "https://")
+
+	if entering {
+		_, _ = w.WriteString(`<a href="`)
+		_, _ = w.Write(util.EscapeHTML(n.Destination))
+		_, _ = w.WriteString(`"`)
+		if isExternal {
+			_, _ = w.WriteString(` target="_blank" rel="noopener"`)
+		}
+		if n.Title != nil {
+			_, _ = w.WriteString(` title="`)
+			_, _ = w.Write(util.EscapeHTML(n.Title))
+			_, _ = w.WriteString(`"`)
+		}
+		_, _ = w.WriteString(`>`)
+	} else {
+		_, _ = w.WriteString(`</a>`)
+	}
+	return ast.WalkContinue, nil
+}
+
 // — goldmark ————————————————————————————————————————————————————————————————
 
 func newMD(lookup map[string]string, hc *headingCollector) goldmark.Markdown {
@@ -188,6 +220,7 @@ func newMD(lookup map[string]string, hc *headingCollector) goldmark.Markdown {
 			html.WithUnsafe(),
 			renderer.WithNodeRenderers(
 				util.Prioritized(&mermaidRenderer{}, 100),
+				util.Prioritized(&externalLinkRenderer{}, 50),
 			),
 		),
 	)
