@@ -37,8 +37,8 @@ function setupHandle(handleId, cssVar, panelId, min, max, invert) {
 }
 
 // Vertical resize handles: drag the border between two sections.
-// Controls the section below the handle. Drag up → grow (panel expands
-// upward into the flexible area above). Drag down → shrink.
+// Controls the scrollable body inside the section below the handle.
+// Drag up → grow (panel expands upward). Drag down → shrink.
 function setupVerticalHandles() {
   for (const handle of document.querySelectorAll('.resize-handle-v')) {
     handle.addEventListener('pointerdown', (e) => {
@@ -46,17 +46,23 @@ function setupVerticalHandles() {
       handle.setPointerCapture(e.pointerId);
       handle.classList.add('dragging');
 
-      const target = handle.nextElementSibling;
-      if (!target) return;
+      const section = handle.nextElementSibling;
+      if (!section) return;
+
+      // Find the scrollable body inside the section.
+      const body = section.querySelector('.toc-links-body, .toc-tags-body, .sidebar-tags-body');
+      if (!body) return;
 
       const startY = e.clientY;
-      const startHeight = target.getBoundingClientRect().height;
+      const startHeight = body.getBoundingClientRect().height;
 
       function onMove(e) {
         const delta = e.clientY - startY;
-        const height = Math.max(40, startHeight - delta);
-        target.style.height = height + 'px';
-        target.style.maxHeight = 'none';
+        const height = Math.max(20, startHeight - delta);
+        body.style.height = height + 'px';
+        body.style.maxHeight = 'none';
+        body.style.flexGrow = '0';
+        body.style.flexShrink = '0';
       }
 
       function onUp() {
