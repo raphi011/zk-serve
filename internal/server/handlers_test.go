@@ -155,6 +155,69 @@ func TestNoteHandlerIncludesManifest(t *testing.T) {
 	}
 }
 
+func TestNoteHTMXReturnsPartial(t *testing.T) {
+	dir := t.TempDir()
+	notePath := dir + "/test-note.md"
+	if err := os.WriteFile(notePath, []byte("# Hello\n\nBold **text**.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	notes := []zk.Note{
+		{
+			Filename: "test-note.md", FilenameStem: "test-note",
+			Path: "test-note.md", AbsPath: notePath,
+			Title: "Hello", Modified: time.Now(), Created: time.Now(),
+		},
+	}
+	h := newTestServer(t, notes, nil)
+	req := httptest.NewRequest("GET", "/note/test-note.md", nil)
+	req.Header.Set("HX-Request", "true")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	body := w.Body.String()
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	if !strings.Contains(body, `id="content-col"`) {
+		t.Error("expected #content-col in partial response")
+	}
+	if !strings.Contains(body, `hx-swap-oob="true"`) {
+		t.Error("expected hx-swap-oob in partial response")
+	}
+	if strings.Contains(body, "<html") {
+		t.Error("HTMX partial must not include full page layout")
+	}
+	if strings.Contains(body, `id="sidebar"`) {
+		t.Error("HTMX partial must not include sidebar")
+	}
+}
+
+func TestFolderHTMXReturnsPartial(t *testing.T) {
+	notes := []zk.Note{
+		{
+			Filename: "note.md", FilenameStem: "note",
+			Path: "recipes/note.md", AbsPath: "/nb/recipes/note.md",
+			Title: "My Recipe",
+		},
+	}
+	h := newTestServer(t, notes, nil)
+	req := httptest.NewRequest("GET", "/folder/recipes", nil)
+	req.Header.Set("HX-Request", "true")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	body := w.Body.String()
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	if !strings.Contains(body, `id="content-col"`) {
+		t.Error("expected #content-col in partial response")
+	}
+	if strings.Contains(body, "<html") {
+		t.Error("HTMX partial must not include full page layout")
+	}
+}
+
 func TestStaticAssetsServed(t *testing.T) {
 	h := newTestServer(t, nil, nil)
 	for _, path := range []string{"/static/style.css", "/static/htmx.min.js", "/static/mermaid.min.js"} {
