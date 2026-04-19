@@ -75,6 +75,11 @@ func (d *DB) Close() error {
 	return d.db.Close()
 }
 
+// NotebookPath returns the root path of the notebook on disk.
+func (d *DB) NotebookPath() string {
+	return d.notebookPath
+}
+
 // AllNotes returns every note ordered by sortable_path.
 func (d *DB) AllNotes() ([]Note, error) {
 	const query = `
@@ -196,7 +201,7 @@ func (d *DB) Backlinks(path string) ([]Link, error) {
 		LEFT JOIN notes_collections nc ON nc.note_id = n.id
 		LEFT JOIN collections c ON c.id = nc.collection_id AND c.kind = 'tag'
 		WHERE rl.target_path = ? AND rl.external = 0
-		GROUP BY rl.id
+		GROUP BY rl.source_path
 		ORDER BY rl.source_title`
 
 	rows, err := d.db.Query(query, path)

@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -44,35 +46,60 @@ type FileNode struct {
 	Children []*FileNode
 }
 
-// buildTree converts a flat note list into a sorted folder tree.
-// Directories sort before files; both groups are sorted alphabetically.
-func buildTree(notes []zk.Note, activePath string) []*FileNode {
+// buildTree walks the notebook filesystem and builds a sorted folder tree.
+// DB notes provide titles for indexed files; un-indexed .md files use their filename.
+// The .zk directory is excluded.
+func buildTree(notebookPath string, notes []zk.Note, activePath string) []*FileNode {
+	// Index DB notes by path for title lookup.
+	titleByPath := make(map[string]string, len(notes))
+	for _, n := range notes {
+		titleByPath[n.Path] = n.Title
+	}
+
 	type treeEntry struct {
 		node     *FileNode
 		children map[string]*treeEntry
 	}
 	root := &treeEntry{children: map[string]*treeEntry{}}
 
-	for _, note := range notes {
-		parts := strings.Split(note.Path, "/")
+	// Walk the notebook directory for all .md files and directories.
+	_ = filepath.WalkDir(notebookPath, func(absPath string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		rel, _ := filepath.Rel(notebookPath, absPath)
+		if rel == "." {
+			return nil
+		}
+		// Skip hidden directories (like .zk).
+		if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
+			return filepath.SkipDir
+		}
+		// Only include directories and .md files.
+		if !d.IsDir() && !strings.HasSuffix(d.Name(), ".md") {
+			return nil
+		}
+
+		parts := strings.Split(rel, "/")
 		cur := root
 		for i, part := range parts {
 			if _, exists := cur.children[part]; !exists {
 				var node *FileNode
-				if i == len(parts)-1 {
-					name := note.Title
+				if d.IsDir() || i < len(parts)-1 {
+					node = &FileNode{Name: part, IsDir: true}
+				} else {
+					name := titleByPath[rel]
 					if name == "" {
 						name = strings.TrimSuffix(part, ".md")
 					}
-					node = &FileNode{Name: name, Path: note.Path, IsActive: note.Path == activePath}
-				} else {
-					node = &FileNode{Name: part, IsDir: true}
+					node = &FileNode{Name: name, Path: rel, IsActive: rel == activePath}
 				}
 				cur.children[part] = &treeEntry{node: node, children: map[string]*treeEntry{}}
 			}
 			cur = cur.children[part]
 		}
-	}
+		return nil
+	})
 
 	// flatten returns children and whether any descendant is active.
 	var flatten func(*treeEntry) ([]*FileNode, bool)
@@ -176,7 +203,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to list notes: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderTemplate(w, s.tmpl, "layout.html", &pageData{Tags: tags, Tree: buildTree(notes, ""), ManifestJSON: buildManifest(notes)})
+	renderTemplate(w, s.tmpl, "layout.html", &pageData{Tags: tags, Tree: buildTree(s.store.NotebookPath(), notes, ""), ManifestJSON: buildManifest(notes)})
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +227,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 			}
 			notes = filtered
 		}
-		renderTemplate(w, s.tmpl, "tree", &pageData{Tree: buildTree(notes, "")})
+		renderTemplate(w, s.tmpl, "tree", &pageData{Tree: buildTree(s.store.NotebookPath(), notes, "")})
 		return
 	}
 
@@ -252,8 +279,20 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if note == nil {
-		http.NotFound(w, r)
-		return
+		// Not in DB — try reading from disk (un-indexed files like raw/).
+		absPath := filepath.Join(s.store.NotebookPath(), notePath)
+		if _, err := os.Stat(absPath); err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		stem := strings.TrimSuffix(filepath.Base(notePath), ".md")
+		note = &zk.Note{
+			Path:         notePath,
+			AbsPath:      absPath,
+			Filename:     filepath.Base(notePath),
+			FilenameStem: stem,
+			Title:        stem,
+		}
 	}
 	raw, err := os.ReadFile(note.AbsPath)
 	if err != nil {
@@ -277,7 +316,7 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		Title:         note.Title,
 		ActivePath:    notePath,
 		Tags:          tags,
-		Tree:          buildTree(notes, notePath),
+		Tree:          buildTree(s.store.NotebookPath(), notes, notePath),
 		CurrentNote:   note,
 		NoteHTML:      template.HTML(result.HTML),
 		Headings:      result.Headings,
@@ -327,7 +366,7 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 				Title:         note.Title,
 				ActivePath:    note.Path,
 				Tags:          tags,
-				Tree:          buildTree(notes, note.Path),
+				Tree:          buildTree(s.store.NotebookPath(), notes, note.Path),
 				CurrentNote:   note,
 				NoteHTML:      template.HTML(result.HTML),
 				Headings:      result.Headings,
@@ -370,7 +409,7 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, s.tmpl, "layout.html", &pageData{
 		Title:         folderName,
 		Tags:          tags,
-		Tree:          buildTree(notes, ""),
+		Tree:          buildTree(s.store.NotebookPath(), notes, ""),
 		Breadcrumbs:   buildBreadcrumbs(folderPath),
 		FolderName:    folderName,
 		FolderEntries: entries,

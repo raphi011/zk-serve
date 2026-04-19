@@ -13,10 +13,11 @@ import (
 )
 
 type stubStore struct {
-	notes     []zk.Note
-	tags      []zk.Tag
-	outLinks  []zk.Link
-	backLinks []zk.Link
+	notes        []zk.Note
+	tags         []zk.Tag
+	outLinks     []zk.Link
+	backLinks    []zk.Link
+	notebookPath string
 }
 
 func (s *stubStore) AllNotes() ([]zk.Note, error)                      { return s.notes, nil }
@@ -24,6 +25,7 @@ func (s *stubStore) AllTags() ([]zk.Tag, error)                        { return 
 func (s *stubStore) Search(q string, tags []string) ([]zk.Note, error) { return s.notes, nil }
 func (s *stubStore) OutgoingLinks(path string) ([]zk.Link, error)      { return s.outLinks, nil }
 func (s *stubStore) Backlinks(path string) ([]zk.Link, error)          { return s.backLinks, nil }
+func (s *stubStore) NotebookPath() string                              { return s.notebookPath }
 
 var testNotes = []zk.Note{
 	{
@@ -42,7 +44,7 @@ var testTags = []zk.Tag{
 
 func newTestServer(t *testing.T, notes []zk.Note, tags []zk.Tag) http.Handler {
 	t.Helper()
-	stub := &stubStore{notes: notes, tags: tags}
+	stub := &stubStore{notes: notes, tags: tags, notebookPath: t.TempDir()}
 	srv, err := server.New(stub)
 	if err != nil {
 		t.Fatalf("New: %v", err)
