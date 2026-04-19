@@ -78,7 +78,7 @@ func (d *DB) Close() error {
 // AllNotes returns every note ordered by sortable_path.
 func (d *DB) AllNotes() ([]Note, error) {
 	const query = `
-		SELECT path, title, lead, metadata, COALESCE(tags, '')
+		SELECT path, title, lead, word_count, created, modified, metadata, COALESCE(tags, '')
 		FROM notes_with_metadata
 		ORDER BY sortable_path`
 
@@ -92,15 +92,29 @@ func (d *DB) AllNotes() ([]Note, error) {
 	for rows.Next() {
 		var (
 			n           Note
+			createdRaw  string
+			modifiedRaw string
 			metadataRaw string
 			tagsRaw     string
 		)
-		if err := rows.Scan(&n.Path, &n.Title, &n.Lead, &metadataRaw, &tagsRaw); err != nil {
+		if err := rows.Scan(&n.Path, &n.Title, &n.Lead, &n.WordCount, &createdRaw, &modifiedRaw, &metadataRaw, &tagsRaw); err != nil {
 			return nil, fmt.Errorf("scan note: %w", err)
 		}
 		n.Filename = filepath.Base(n.Path)
 		n.FilenameStem = strings.TrimSuffix(n.Filename, ".md")
 		n.AbsPath = filepath.Join(d.notebookPath, n.Path)
+		if createdRaw != "" {
+			n.Created, _ = time.Parse(time.RFC3339Nano, createdRaw)
+			if n.Created.IsZero() {
+				n.Created, _ = time.Parse("2006-01-02 15:04:05", createdRaw)
+			}
+		}
+		if modifiedRaw != "" {
+			n.Modified, _ = time.Parse(time.RFC3339Nano, modifiedRaw)
+			if n.Modified.IsZero() {
+				n.Modified, _ = time.Parse("2006-01-02 15:04:05", modifiedRaw)
+			}
+		}
 		if tagsRaw != "" {
 			n.Tags = strings.Split(tagsRaw, "\x01")
 		}

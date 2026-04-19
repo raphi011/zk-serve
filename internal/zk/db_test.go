@@ -62,6 +62,15 @@ func TestAllNotes(t *testing.T) {
 	if len(gc.Tags) < 2 {
 		t.Errorf("Tags = %v, want at least [go, concurrency]", gc.Tags)
 	}
+	if gc.WordCount == 0 {
+		t.Error("WordCount should be populated from DB")
+	}
+	if gc.Created.IsZero() {
+		t.Error("Created should be populated from DB")
+	}
+	if gc.Modified.IsZero() {
+		t.Error("Modified should be populated from DB")
+	}
 }
 
 func TestOutgoingLinks(t *testing.T) {
