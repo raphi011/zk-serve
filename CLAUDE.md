@@ -24,8 +24,8 @@ go test ./internal/server/...  -v
 
 Three internal packages with a clear layered dependency: `server` → `render` + `zk`.
 
-### `internal/zk` — notebook client
-Shells out to the `zk` CLI (`exec.Command` in the notebook directory) and parses JSON output. Exposes `Client.List(query, tags)` and `Client.TagList()`. The server depends on `ClientInterface` (not the concrete type) so handlers can be tested with a stub.
+### `internal/zk` — notebook data access
+Queries zk's SQLite database directly via `modernc.org/sqlite` (pure-Go, no CGO). `DB` type wraps `*sql.DB` opened read-only against `notebook.db`. Exposes `DB.AllNotes()`, `DB.AllTags()`, and `DB.Search(q, tags)` (FTS5 full-text search with BM25 ranking). `ConvertQuery` transforms Google-like search syntax into FTS5 MATCH expressions. The server depends on the `Store` interface so handlers can be tested with a stub. The `zk` binary is only needed for indexing (`zk index`), not at runtime.
 
 ### `internal/render` — Markdown pipeline
 Single public function `Markdown(src []byte, lookup map[string]string) (string, error)`. The lookup map is `stem → absPath`, built from the full note list and used to resolve `[[wiki links]]`. The Goldmark pipeline runs these transforms in order:
@@ -45,7 +45,7 @@ Routes:
 - `GET /static/*` — embedded assets
 
 ### `cmd/zk-serve`
-Cobra entry point. Validates the `zk` binary is on PATH before starting the server.
+Cobra entry point. Opens `notebook.db` via `zk.OpenDB` and passes it to the server.
 
 ## Key conventions
 - Templates are embedded (`//go:embed templates/* static/*`) and parsed once at startup.
