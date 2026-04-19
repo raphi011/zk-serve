@@ -936,8 +936,7 @@ a.backlink-card, .backlink-card {
   background: var(--surface);
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
 
   #toc-header {
     height: 35px;
@@ -1003,11 +1002,11 @@ a.backlink-card, .backlink-card {
 .toc-links-section {
   border-top: 1px solid var(--border);
   padding: 6px 0 4px;
-  flex-shrink: 0;
-  min-height: 0;
+  flex: 0 1 auto;
+  min-height: 40px;
   display: flex;
   flex-direction: column;
-  max-height: var(--panel-height, 120px);
+  overflow: hidden;
 }
 
 .toc-links-label {
