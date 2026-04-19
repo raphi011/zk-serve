@@ -1,0 +1,40 @@
+export function initResize() {
+  const savedSidebar = localStorage.getItem('zk-sidebar-width');
+  const savedToc = localStorage.getItem('zk-toc-width');
+  if (savedSidebar) document.documentElement.style.setProperty('--sidebar-width', savedSidebar + 'px');
+  if (savedToc) document.documentElement.style.setProperty('--toc-width', savedToc + 'px');
+
+  setupHandle('sidebar-resize', '--sidebar-width', 'sidebar', 120, 360, false);
+  setupHandle('toc-resize', '--toc-width', 'toc-panel', 140, 360, true);
+}
+
+function setupHandle(handleId, cssVar, panelId, min, max, invert) {
+  const handle = document.getElementById(handleId);
+  const panel = document.getElementById(panelId);
+  if (!handle || !panel) return;
+
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    handle.classList.add('dragging');
+    const startX = e.clientX;
+    const startWidth = panel.getBoundingClientRect().width;
+
+    function onMove(e) {
+      const delta = invert ? startX - e.clientX : e.clientX - startX;
+      const width = Math.min(max, Math.max(min, startWidth + delta));
+      document.documentElement.style.setProperty(cssVar, width + 'px');
+    }
+
+    function onUp() {
+      handle.classList.remove('dragging');
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      const finalWidth = Math.round(panel.getBoundingClientRect().width);
+      localStorage.setItem('zk-' + panelId + '-width', finalWidth);
+    }
+
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+  });
+}
