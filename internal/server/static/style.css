@@ -30,7 +30,7 @@
   --accent:      oklch(0.68 0.14 65);
   --accent-soft: oklch(0.25 0.04 65);
   --accent-tag:  oklch(0.68 0.14 65);
-  --link:        oklch(0.65 0.10 140);
+  --link:        oklch(0.72 0.12 65);
   --code-bg:     oklch(0.20 0.012 70);
 }
 
@@ -46,7 +46,7 @@
   --accent:      oklch(0.55 0.14 55);
   --accent-soft: oklch(0.88 0.06 65);
   --accent-tag:  oklch(0.55 0.14 55);
-  --link:        oklch(0.50 0.10 140);
+  --link:        oklch(0.50 0.12 65);
   --code-bg:     oklch(0.89 0.015 80);
 }
 
