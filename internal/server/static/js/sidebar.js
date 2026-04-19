@@ -33,7 +33,6 @@ export function initSidebar() {
 
   // Mobile sidebar toggle.
   const menuBtn = document.getElementById('mob-menu-btn');
-  const sidebar = document.getElementById('sidebar');
   const backdrop = document.getElementById('sidebar-backdrop');
   if (menuBtn && sidebar && backdrop) {
     menuBtn.addEventListener('click', () => {
