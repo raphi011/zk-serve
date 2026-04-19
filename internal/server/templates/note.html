@@ -7,17 +7,12 @@
         hx-vals='{"q": "", "tags": "", "folder": ""}'
         hx-target="#note-list"
         hx-on:click="document.querySelector('[name=tags]').value=''">~</span>
-  {{range .Breadcrumbs}}
-  <span class="breadcrumb__sep">›</span>
-  <span class="breadcrumb__item"
+  {{range .Breadcrumbs}}<span class="breadcrumb__sep">/</span><span class="breadcrumb__item"
         hx-get="/search"
         hx-trigger="click"
         hx-vals='{"q": "", "tags": "", "folder": "{{.FolderPath}}"}'
         hx-target="#note-list"
-        hx-on:click="document.querySelector('[name=tags]').value=''">{{.Name}}</span>
-  {{end}}
-  <span class="breadcrumb__sep">›</span>
-  <span class="breadcrumb__current">{{if .CurrentNote.Title}}{{.CurrentNote.Title}}{{else}}{{.CurrentNote.FilenameStem}}{{end}}</span>
+        hx-on:click="document.querySelector('[name=tags]').value=''">{{.Name}}</span>{{end}}<span class="breadcrumb__sep">/</span><span class="breadcrumb__current">{{if .CurrentNote.Title}}{{.CurrentNote.Title}}{{else}}{{.CurrentNote.FilenameStem}}{{end}}</span>
 </nav>
 {{end}}
 <article>
