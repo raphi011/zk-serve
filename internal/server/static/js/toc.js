@@ -1,10 +1,28 @@
+let observer = null;
+let scrollHandler = null;
+
+export function destroyToc() {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+  const contentArea = document.getElementById('content-area');
+  if (scrollHandler && contentArea) {
+    contentArea.removeEventListener('scroll', scrollHandler);
+    scrollHandler = null;
+  }
+  const progressBar = document.getElementById('progress-bar');
+  if (progressBar) progressBar.style.width = '0%';
+}
+
 export function initToc() {
+  destroyToc();
+
   const contentArea = document.getElementById('content-area');
   const tocItems = document.querySelectorAll('#toc-inner .toc-item, .mob-toc-body .toc-item');
   const progressBar = document.getElementById('progress-bar');
   if (!contentArea) return;
 
-  // Collect heading elements from toc hrefs.
   const headingIds = [...new Set([...tocItems].map(a => {
     const href = a.getAttribute('href');
     return href ? href.replace('#', '') : null;
@@ -12,11 +30,10 @@ export function initToc() {
 
   const headingEls = headingIds.map(id => document.getElementById(id)).filter(Boolean);
 
-  // TOC scroll tracking via IntersectionObserver.
   if (headingEls.length > 0) {
     let activeId = headingIds[0];
 
-    const observer = new IntersectionObserver(
+    observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
@@ -35,17 +52,15 @@ export function initToc() {
     headingEls.forEach(el => observer.observe(el));
   }
 
-  // Progress bar — always use JS since we scroll a nested div, not the document.
-  // CSS scroll-timeline can't target a non-ancestor scroll container.
   if (progressBar) {
-    contentArea.addEventListener('scroll', () => {
+    scrollHandler = () => {
       const max = contentArea.scrollHeight - contentArea.clientHeight;
       const pct = max > 0 ? Math.round((contentArea.scrollTop / max) * 100) : 0;
       progressBar.style.width = pct + '%';
-    }, { passive: true });
+    };
+    contentArea.addEventListener('scroll', scrollHandler, { passive: true });
   }
 
-  // Mobile TOC: scroll to heading and auto-close details.
   const mobDetails = document.getElementById('mob-toc-details');
   if (mobDetails) {
     mobDetails.addEventListener('click', (e) => {
