@@ -24,16 +24,16 @@
     <div id="active-filters"></div>
     <div id="sidebar-inner">
       {{if .Tree}}<div class="server-tree">{{template "tree" .}}</div>{{end}}
-      {{if .Tags}}
-      <div class="resize-handle-v server-tree" data-resize-target="next"></div>
-      <details class="sidebar-tags-section server-tree" open>
-        <summary class="sidebar-section-label">Tags <span class="sidebar-tag-count">{{len .Tags}}</span></summary>
-        <div class="sidebar-tags-body">
-          {{range .Tags}}<span class="tag-pill" data-tag="{{.Name}}">{{.Name}} <span class="tag-count">{{.NoteCount}}</span></span>{{end}}
-        </div>
-      </details>
-      {{end}}
     </div>
+    {{if .Tags}}
+    <div class="resize-handle-v server-tree" data-resize-target="next"></div>
+    <details class="sidebar-tags-section server-tree" open>
+      <summary class="sidebar-section-label">Tags <span class="sidebar-tag-count">{{len .Tags}}</span></summary>
+      <div class="sidebar-tags-body">
+        {{range .Tags}}<span class="tag-pill" data-tag="{{.Name}}">{{.Name}} <span class="tag-count">{{.NoteCount}}</span></span>{{end}}
+      </div>
+    </details>
+    {{end}}
   </nav>
   <div class="resize-handle" id="sidebar-resize"></div>
   <div id="main">

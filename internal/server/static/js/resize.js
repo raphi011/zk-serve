@@ -36,8 +36,8 @@ function setupHandle(handleId, cssVar, panelId, min, max, invert) {
   });
 }
 
-// Vertical resize handles: drag the top border of a collapsible section
-// to adjust the max-height of its scrollable body.
+// Vertical resize handles: drag the border between two sections
+// to adjust the max-height of the adjacent collapsible section.
 function setupVerticalHandles() {
   for (const handle of document.querySelectorAll('.resize-handle-v')) {
     handle.addEventListener('pointerdown', (e) => {
@@ -45,19 +45,18 @@ function setupVerticalHandles() {
       handle.setPointerCapture(e.pointerId);
       handle.classList.add('dragging');
 
-      // The target is the next sibling <details> element's scrollable body.
+      // The target is the next sibling <details> element.
       const details = handle.nextElementSibling;
       if (!details) return;
-      const body = details.querySelector('.toc-links-body, .toc-tags-body, .sidebar-tags-body');
-      if (!body) return;
 
       const startY = e.clientY;
-      const startHeight = body.getBoundingClientRect().height;
+      const startHeight = details.getBoundingClientRect().height;
 
       function onMove(e) {
         const delta = e.clientY - startY;
-        const height = Math.max(40, startHeight + delta);
-        body.style.maxHeight = height + 'px';
+        // Handle is above target: drag up → grow, drag down → shrink.
+        const height = Math.max(40, startHeight - delta);
+        details.style.maxHeight = height + 'px';
       }
 
       function onUp() {

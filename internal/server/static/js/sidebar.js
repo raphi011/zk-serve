@@ -2,12 +2,13 @@ const manifest = window.__ZK_MANIFEST || [];
 let selectedTags = [];
 let searchQuery = '';
 
-let filterInput, filtersEl, sidebarInner, tagsSection;
+let filterInput, filtersEl, sidebarInner, sidebar, tagsSection;
 
 export function initSidebar() {
   filterInput = document.getElementById('sidebar-filter');
   filtersEl = document.getElementById('active-filters');
   sidebarInner = document.getElementById('sidebar-inner');
+  sidebar = document.getElementById('sidebar');
 
   if (!filterInput || !sidebarInner) return;
 
@@ -64,12 +65,12 @@ function render() {
   const hasTags = selectedTags.length > 0;
 
   if (!query && !hasTags) {
-    sidebarInner.querySelectorAll('.server-tree').forEach(el => el.style.display = '');
+    sidebar.querySelectorAll('.server-tree').forEach(el => el.style.display = '');
     sidebarInner.querySelectorAll('.client-results').forEach(el => el.remove());
     return;
   }
 
-  sidebarInner.querySelectorAll('.server-tree').forEach(el => el.style.display = 'none');
+  sidebar.querySelectorAll('.server-tree').forEach(el => el.style.display = 'none');
 
   let results = manifest;
   if (hasTags) {
