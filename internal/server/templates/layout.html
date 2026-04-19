@@ -24,12 +24,6 @@
     <div id="active-filters"></div>
     <div id="sidebar-inner">
       {{if .Tree}}<div class="server-tree">{{template "tree" .}}</div>{{end}}
-      <div class="server-tree" id="sidebar-tags">
-        <p class="sidebar-section-label">Tags</p>
-        <div class="tags-list">
-          {{range .Tags}}<span class="tag-pill" data-tag="{{.Name}}">{{.Name}} <span class="tag-count">{{.NoteCount}}</span></span>{{end}}
-        </div>
-      </div>
     </div>
   </nav>
   <div class="resize-handle" id="sidebar-resize"></div>
@@ -50,10 +44,8 @@
         {{end}}
       </div>
     </div>
-    {{if .NoteHTML}}
     <div class="resize-handle" id="toc-resize"></div>
     {{template "toc" .}}
-    {{end}}
   </div>
 </div>
 <dialog id="cmd-dialog">

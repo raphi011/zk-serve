@@ -968,6 +968,13 @@ a.backlink-card, .backlink-card {
   padding: 2px 0 4px;
 }
 
+.toc-tags-body {
+  padding: 4px 10px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .toc-link-item {
   display: block;
   padding: 2px 14px;
