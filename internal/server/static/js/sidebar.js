@@ -92,12 +92,14 @@ function render() {
     container.innerHTML = '<div class="sidebar-empty">No results</div>';
   } else {
     container.innerHTML = results.map(n => `
-      <a class="result-item" href="/note/${encodeURI(n.path)}">
-        <div class="result-title">${esc(n.title || n.path)}</div>
+      <div class="result-item">
+        <a class="result-link" href="/note/${encodeURI(n.path)}">
+          <div class="result-title">${esc(n.title || n.path)}</div>
+        </a>
         ${n.tags.length ? `<div class="result-tags">${n.tags.map(t =>
           `<span class="result-tag" data-tag="${esc(t)}">${esc(t)}</span>`
         ).join('')}</div>` : ''}
-      </a>
+      </div>
     `).join('');
   }
 
@@ -112,7 +114,7 @@ function renderFilters() {
   }
   filtersEl.style.display = 'flex';
   filtersEl.innerHTML =
-    '<span class="active-filters-label">Filter:</span>' +
+    '<span id="active-filters-label">Filter:</span>' +
     selectedTags.map(t =>
       `<span class="filter-chip" data-tag="${esc(t)}">${esc(t)} <span class="remove">×</span></span>`
     ).join('');

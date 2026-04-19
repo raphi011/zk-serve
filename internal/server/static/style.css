@@ -887,15 +887,6 @@ a.backlink-card, .backlink-card {
     font-family: var(--font-ui);
   }
 
-  #toc-tags {
-    padding: 7px 12px 8px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-
   #toc-inner {
     flex: 1;
     overflow-y: auto;

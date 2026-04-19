@@ -2,11 +2,6 @@
 <details id="mob-toc-details" class="mob-toc">
   <summary class="mob-toc-toggle">On this page</summary>
   <div class="mob-toc-body">
-    {{if .CurrentNote.Tags}}
-    <div class="mob-tags-row">
-      {{range .CurrentNote.Tags}}<a class="toc-tag-pill" href="/?tags={{.}}">{{.}}</a>{{end}}
-    </div>
-    {{end}}
     {{range .Headings}}<a class="toc-item{{if eq .Level 3}} h3{{end}}" href="#{{.ID}}">{{.Text}}</a>{{end}}
   </div>
 </details>

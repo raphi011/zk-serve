@@ -35,8 +35,9 @@ export function initToc() {
     headingEls.forEach(el => observer.observe(el));
   }
 
-  // Progress bar — JS fallback for browsers without scroll-timeline.
-  if (progressBar && !CSS.supports('animation-timeline', 'scroll()')) {
+  // Progress bar — always use JS since we scroll a nested div, not the document.
+  // CSS scroll-timeline can't target a non-ancestor scroll container.
+  if (progressBar) {
     contentArea.addEventListener('scroll', () => {
       const max = contentArea.scrollHeight - contentArea.clientHeight;
       const pct = max > 0 ? Math.round((contentArea.scrollTop / max) * 100) : 0;
