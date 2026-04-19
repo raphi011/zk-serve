@@ -1,4 +1,4 @@
-import { esc } from './utils.js';
+import { esc, fuzzyMatch } from './utils.js';
 
 const manifest = window.__ZK_MANIFEST || [];
 let selectedTags = [];
@@ -130,11 +130,14 @@ function render() {
     results = results.filter(n => selectedTags.every(t => n.tags.includes(t)));
   }
   if (query) {
-    results = results.filter(n =>
-      n.title.toLowerCase().includes(query) ||
-      n.tags.some(t => t.toLowerCase().includes(query)) ||
-      n.path.toLowerCase().includes(query)
-    );
+    const scored = [];
+    for (const n of results) {
+      const haystack = n.title + ' ' + n.tags.join(' ') + ' ' + n.path;
+      const m = fuzzyMatch(query, haystack);
+      if (m) scored.push({ note: n, score: m.score });
+    }
+    scored.sort((a, b) => b.score - a.score);
+    results = scored.map(s => s.note);
   }
 
   sidebarInner.querySelectorAll('.client-results').forEach(el => el.remove());

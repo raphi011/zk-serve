@@ -1,4 +1,4 @@
-import { esc } from './utils.js';
+import { esc, fuzzyMatch } from './utils.js';
 import { getRecentPaths } from './history.js';
 
 const manifest = window.__ZK_MANIFEST || [];
@@ -96,14 +96,17 @@ function renderResults(query, container) {
       modified.forEach(n => { html += itemHtml(n); });
     }
   } else {
-    const matched = manifest.filter(n =>
-      n.title.toLowerCase().includes(q) ||
-      n.tags.some(t => t.toLowerCase().includes(q)) ||
-      n.path.toLowerCase().includes(q)
-    );
-    if (matched.length) {
+    const scored = [];
+    for (const n of manifest) {
+      const haystack = n.title + ' ' + n.tags.join(' ') + ' ' + n.path;
+      const m = fuzzyMatch(q, haystack);
+      if (m) scored.push({ note: n, score: m.score, indices: m.indices });
+    }
+    scored.sort((a, b) => b.score - a.score);
+
+    if (scored.length) {
       html += '<div class="cmd-group-label">Notes</div>';
-      matched.slice(0, 20).forEach(n => { html += itemHtml(n, q); });
+      scored.slice(0, 20).forEach(({ note }) => { html += itemHtml(note, q); });
     } else {
       html = '<div class="cmd-empty">No results</div>';
     }
@@ -115,7 +118,8 @@ function renderResults(query, container) {
 }
 
 function itemHtml(note, query) {
-  const title = query ? highlight(note.title || note.path, query) : esc(note.title || note.path);
+  const display = note.title || note.path;
+  const title = query ? fuzzyHighlight(display, query) : esc(display);
   const tags = note.tags.map(t => '#' + t).join(' ');
   return `<div class="cmd-item" data-href="/note/${encodeURI(note.path)}">
     <span class="cmd-label">${title}</span>
@@ -127,8 +131,19 @@ function setFocus(els) {
   els.forEach((el, i) => el.classList.toggle('focused', i === focusIdx));
 }
 
-function highlight(text, query) {
-  const escaped = esc(text);
-  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  return escaped.replace(re, '<mark>$1</mark>');
+// Highlight fuzzy-matched characters in text, merging consecutive runs.
+function fuzzyHighlight(text, query) {
+  const m = fuzzyMatch(query, text);
+  if (!m) return esc(text);
+  const matched = new Set(m.indices);
+  let html = '';
+  let inMark = false;
+  for (let i = 0; i < text.length; i++) {
+    const hit = matched.has(i);
+    if (hit && !inMark) { html += '<mark>'; inMark = true; }
+    if (!hit && inMark) { html += '</mark>'; inMark = false; }
+    html += esc(text[i]);
+  }
+  if (inMark) html += '</mark>';
+  return html;
 }
