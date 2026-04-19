@@ -149,6 +149,114 @@ func TestBacklinksEmpty(t *testing.T) {
 	}
 }
 
+func TestActivityDays(t *testing.T) {
+	skipIfNoDB(t)
+	db, err := zk.OpenDB(testDBPath, testNotebookPath)
+	if err != nil {
+		t.Fatalf("OpenDB: %v", err)
+	}
+	defer db.Close()
+
+	// Get all notes to find a month with known activity.
+	notes, err := db.AllNotes()
+	if err != nil {
+		t.Fatalf("AllNotes: %v", err)
+	}
+	if len(notes) == 0 {
+		t.Fatal("expected at least 1 note")
+	}
+
+	// Use the created date of the first note to query.
+	y, m, _ := notes[0].Created.Date()
+	days, err := db.ActivityDays(y, int(m))
+	if err != nil {
+		t.Fatalf("ActivityDays: %v", err)
+	}
+	if len(days) == 0 {
+		t.Errorf("expected at least 1 active day in %d-%02d", y, m)
+	}
+
+	// Every returned day should be 1-31.
+	for d := range days {
+		if d < 1 || d > 31 {
+			t.Errorf("invalid day number: %d", d)
+		}
+	}
+}
+
+func TestActivityDaysEmptyMonth(t *testing.T) {
+	skipIfNoDB(t)
+	db, err := zk.OpenDB(testDBPath, testNotebookPath)
+	if err != nil {
+		t.Fatalf("OpenDB: %v", err)
+	}
+	defer db.Close()
+
+	// 1970-01 should have no notes.
+	days, err := db.ActivityDays(1970, 1)
+	if err != nil {
+		t.Fatalf("ActivityDays: %v", err)
+	}
+	if len(days) != 0 {
+		t.Errorf("expected 0 active days in 1970-01, got %d", len(days))
+	}
+}
+
+func TestNotesByDate(t *testing.T) {
+	skipIfNoDB(t)
+	db, err := zk.OpenDB(testDBPath, testNotebookPath)
+	if err != nil {
+		t.Fatalf("OpenDB: %v", err)
+	}
+	defer db.Close()
+
+	// Get all notes to find a known date.
+	allNotes, err := db.AllNotes()
+	if err != nil {
+		t.Fatalf("AllNotes: %v", err)
+	}
+	if len(allNotes) == 0 {
+		t.Fatal("expected at least 1 note")
+	}
+
+	// Query by the created date of the first note.
+	date := allNotes[0].Created.Format("2006-01-02")
+	notes, err := db.NotesByDate(date)
+	if err != nil {
+		t.Fatalf("NotesByDate: %v", err)
+	}
+	if len(notes) == 0 {
+		t.Errorf("expected at least 1 note for date %s", date)
+	}
+
+	// Verify the returned note's created or modified date matches.
+	for _, n := range notes {
+		createdDate := n.Created.Format("2006-01-02")
+		modifiedDate := n.Modified.Format("2006-01-02")
+		if createdDate != date && modifiedDate != date {
+			t.Errorf("note %q: created=%s modified=%s, neither matches %s",
+				n.Path, createdDate, modifiedDate, date)
+		}
+	}
+}
+
+func TestNotesByDateEmpty(t *testing.T) {
+	skipIfNoDB(t)
+	db, err := zk.OpenDB(testDBPath, testNotebookPath)
+	if err != nil {
+		t.Fatalf("OpenDB: %v", err)
+	}
+	defer db.Close()
+
+	notes, err := db.NotesByDate("1970-01-01")
+	if err != nil {
+		t.Fatalf("NotesByDate: %v", err)
+	}
+	if len(notes) != 0 {
+		t.Errorf("expected 0 notes for 1970-01-01, got %d", len(notes))
+	}
+}
+
 func TestAllTags(t *testing.T) {
 	skipIfNoDB(t)
 	db, err := zk.OpenDB(testDBPath, testNotebookPath)

@@ -228,3 +228,86 @@ func (d *DB) Backlinks(path string) ([]Link, error) {
 	}
 	return links, rows.Err()
 }
+
+// ActivityDays returns which days in the given month have at least one note
+// created or modified on that day. The returned map keys are day-of-month (1-31).
+func (d *DB) ActivityDays(year, month int) (map[int]bool, error) {
+	ym := fmt.Sprintf("%04d-%02d", year, month)
+	const query = `
+		SELECT DISTINCT CAST(strftime('%d', created) AS INTEGER)
+		FROM notes_with_metadata
+		WHERE strftime('%Y-%m', created) = ?
+		UNION
+		SELECT DISTINCT CAST(strftime('%d', modified) AS INTEGER)
+		FROM notes_with_metadata
+		WHERE strftime('%Y-%m', modified) = ?`
+
+	rows, err := d.db.Query(query, ym, ym)
+	if err != nil {
+		return nil, fmt.Errorf("query activity days: %w", err)
+	}
+	defer rows.Close()
+
+	days := make(map[int]bool)
+	for rows.Next() {
+		var day int
+		if err := rows.Scan(&day); err != nil {
+			return nil, fmt.Errorf("scan activity day: %w", err)
+		}
+		days[day] = true
+	}
+	return days, rows.Err()
+}
+
+// NotesByDate returns notes where created or modified matches the given date
+// string (format "YYYY-MM-DD").
+func (d *DB) NotesByDate(date string) ([]Note, error) {
+	const query = `
+		SELECT path, title, lead, word_count, created, modified, metadata, COALESCE(tags, '')
+		FROM notes_with_metadata
+		WHERE DATE(created) = ? OR DATE(modified) = ?
+		ORDER BY sortable_path`
+
+	rows, err := d.db.Query(query, date, date)
+	if err != nil {
+		return nil, fmt.Errorf("query notes by date: %w", err)
+	}
+	defer rows.Close()
+
+	var notes []Note
+	for rows.Next() {
+		var (
+			n           Note
+			createdRaw  string
+			modifiedRaw string
+			metadataRaw string
+			tagsRaw     string
+		)
+		if err := rows.Scan(&n.Path, &n.Title, &n.Lead, &n.WordCount, &createdRaw, &modifiedRaw, &metadataRaw, &tagsRaw); err != nil {
+			return nil, fmt.Errorf("scan note by date: %w", err)
+		}
+		n.Filename = filepath.Base(n.Path)
+		n.FilenameStem = strings.TrimSuffix(n.Filename, ".md")
+		n.AbsPath = filepath.Join(d.notebookPath, n.Path)
+		if createdRaw != "" {
+			n.Created, _ = time.Parse(time.RFC3339Nano, createdRaw)
+			if n.Created.IsZero() {
+				n.Created, _ = time.Parse("2006-01-02 15:04:05", createdRaw)
+			}
+		}
+		if modifiedRaw != "" {
+			n.Modified, _ = time.Parse(time.RFC3339Nano, modifiedRaw)
+			if n.Modified.IsZero() {
+				n.Modified, _ = time.Parse("2006-01-02 15:04:05", modifiedRaw)
+			}
+		}
+		if tagsRaw != "" {
+			n.Tags = strings.Split(tagsRaw, "\x01")
+		}
+		if metadataRaw != "" {
+			_ = json.Unmarshal([]byte(metadataRaw), &n.Metadata)
+		}
+		notes = append(notes, n)
+	}
+	return notes, rows.Err()
+}
