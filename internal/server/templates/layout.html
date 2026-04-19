@@ -6,7 +6,7 @@
   <title>{{if .Title}}{{.Title}} — zk{{else}}zk{{end}}</title>
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="stylesheet" href="/static/chroma.css" />
-  <script>(function(){var s=localStorage.getItem('zk-theme');var p=s||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',p)})();</script>
+  <script>(function(){var d=document.documentElement,s=d.style;var t=localStorage.getItem('zk-theme');d.setAttribute('data-theme',t||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));var sw=localStorage.getItem('zk-sidebar-width');if(sw)s.setProperty('--sidebar-width',sw+'px');var tw=localStorage.getItem('zk-toc-panel-width');if(tw)s.setProperty('--toc-width',tw+'px')})();</script>
 </head>
 <body>
 <div id="progress-bar"></div>

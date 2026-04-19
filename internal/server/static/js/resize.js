@@ -1,9 +1,5 @@
 export function initResize() {
-  const savedSidebar = localStorage.getItem('zk-sidebar-width');
-  const savedToc = localStorage.getItem('zk-toc-width');
-  if (savedSidebar) document.documentElement.style.setProperty('--sidebar-width', savedSidebar + 'px');
-  if (savedToc) document.documentElement.style.setProperty('--toc-width', savedToc + 'px');
-
+  // Saved widths are restored in the inline <head> script to prevent FOUC.
   setupHandle('sidebar-resize', '--sidebar-width', 'sidebar', 120, 360, false);
   setupHandle('toc-resize', '--toc-width', 'toc-panel', 140, 360, true);
 }
