@@ -5,13 +5,17 @@ import (
 	"github.com/raphaelgruber/zk-serve/internal/zk"
 )
 
-templ TOCPanel(headings []render.Heading, outgoing []zk.Link, backlinks []zk.Link, oob bool) {
+templ TOCPanel(headings []render.Heading, outgoing []zk.Link, backlinks []zk.Link, oob bool, calYear int, calMonth int, activeDays map[int]bool) {
 	<aside
 		id="toc-panel"
 		if oob {
 			hx-swap-oob="true"
 		}
 	>
+		if calYear > 0 {
+			@Calendar(calYear, calMonth, activeDays, 0)
+			<div class="resize-handle-v" data-resize-target="next"></div>
+		}
 		if len(headings) > 0 {
 			<div id="toc-header"><span>On this page</span></div>
 			<div id="toc-inner">

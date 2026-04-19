@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/raphaelgruber/zk-serve/internal/model"
 	"github.com/raphaelgruber/zk-serve/internal/render"
@@ -166,15 +167,19 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	if isHTMX(r) {
 		views.EmptyContentCol().Render(r.Context(), w)
-		views.TOCPanel(nil, nil, nil, true).Render(r.Context(), w)
+		views.TOCPanel(nil, nil, nil, true, 0, 0, nil).Render(r.Context(), w)
 		return
 	}
 
+	calYear, calMonth, activeDays := s.calendarData()
 	views.Layout(views.LayoutParams{
-		Tags:         tags,
-		Tree:         buildTree(s.store.NotebookPath(), notes, ""),
-		ManifestJSON: buildManifestJSON(notes),
-		ContentCol:   views.EmptyContentCol(),
+		Tags:          tags,
+		Tree:          buildTree(s.store.NotebookPath(), notes, ""),
+		ManifestJSON:  buildManifestJSON(notes),
+		ContentCol:    views.EmptyContentCol(),
+		CalendarYear:  calYear,
+		CalendarMonth: calMonth,
+		ActiveDays:    activeDays,
 	}).Render(r.Context(), w)
 }
 
@@ -182,8 +187,24 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	activeTag := strings.TrimSpace(r.URL.Query().Get("tags"))
 	folder := strings.TrimSpace(r.URL.Query().Get("folder"))
+	date := strings.TrimSpace(r.URL.Query().Get("date"))
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// Date filter takes priority — mutually exclusive with text/tag search.
+	if date != "" {
+		notes, err := s.store.NotesByDate(date)
+		if err != nil {
+			http.Error(w, "search failed: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if len(notes) == 0 {
+			views.SearchEmpty().Render(r.Context(), w)
+		} else {
+			views.SearchResults(notes).Render(r.Context(), w)
+		}
+		return
+	}
 
 	if q == "" && activeTag == "" {
 		notes, err := s.store.AllNotes()
@@ -219,6 +240,39 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	} else {
 		views.SearchResults(notes).Render(r.Context(), w)
 	}
+}
+
+func (s *Server) handleCalendar(w http.ResponseWriter, r *http.Request) {
+	year, month := currentYearMonth()
+	if v := r.URL.Query().Get("year"); v != "" {
+		fmt.Sscan(v, &year)
+	}
+	if v := r.URL.Query().Get("month"); v != "" {
+		fmt.Sscan(v, &month)
+	}
+
+	days, err := s.store.ActivityDays(year, month)
+	if err != nil {
+		http.Error(w, "calendar failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	views.Calendar(year, month, days, 0).Render(r.Context(), w)
+}
+
+func currentYearMonth() (int, int) {
+	now := time.Now()
+	return now.Year(), int(now.Month())
+}
+
+func (s *Server) calendarData() (int, int, map[int]bool) {
+	year, month := currentYearMonth()
+	days, _ := s.store.ActivityDays(year, month)
+	if days == nil {
+		days = map[int]bool{}
+	}
+	return year, month, days
 }
 
 func (s *Server) handleTags(w http.ResponseWriter, r *http.Request) {
@@ -294,11 +348,12 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 
 	if isHTMX(r) {
 		views.NoteContentCol(breadcrumbs, note, result.HTML, backlinks, result.Headings).Render(r.Context(), w)
-		views.TOCPanel(result.Headings, outLinks, backlinks, true).Render(r.Context(), w)
+		views.TOCPanel(result.Headings, outLinks, backlinks, true, 0, 0, nil).Render(r.Context(), w)
 		return
 	}
 
 	tags, _ := s.store.AllTags()
+	calYear, calMonth, activeDays := s.calendarData()
 	views.Layout(views.LayoutParams{
 		Title:         note.Title,
 		ManifestJSON:  buildManifestJSON(notes),
@@ -308,6 +363,9 @@ func (s *Server) handleNote(w http.ResponseWriter, r *http.Request) {
 		Headings:      result.Headings,
 		OutgoingLinks: outLinks,
 		Backlinks:     backlinks,
+		CalendarYear:  calYear,
+		CalendarMonth: calMonth,
+		ActiveDays:    activeDays,
 	}).Render(r.Context(), w)
 }
 
@@ -352,10 +410,11 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 
 			if isHTMX(r) {
 				views.NoteContentCol(breadcrumbs, note, result.HTML, backlinks, result.Headings).Render(r.Context(), w)
-				views.TOCPanel(result.Headings, outLinks, backlinks, true).Render(r.Context(), w)
+				views.TOCPanel(result.Headings, outLinks, backlinks, true, 0, 0, nil).Render(r.Context(), w)
 				return
 			}
 
+			calYear, calMonth, activeDays := s.calendarData()
 			views.Layout(views.LayoutParams{
 				Title:         note.Title,
 				ManifestJSON:  buildManifestJSON(notes),
@@ -365,6 +424,9 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 				Headings:      result.Headings,
 				OutgoingLinks: outLinks,
 				Backlinks:     backlinks,
+				CalendarYear:  calYear,
+				CalendarMonth: calMonth,
+				ActiveDays:    activeDays,
 			}).Render(r.Context(), w)
 			return
 		}
@@ -402,15 +464,19 @@ func (s *Server) handleFolder(w http.ResponseWriter, r *http.Request) {
 
 	if isHTMX(r) {
 		views.FolderContentCol(breadcrumbs, folderName, entries).Render(r.Context(), w)
-		views.TOCPanel(nil, nil, nil, true).Render(r.Context(), w)
+		views.TOCPanel(nil, nil, nil, true, 0, 0, nil).Render(r.Context(), w)
 		return
 	}
 
+	calYear, calMonth, activeDays := s.calendarData()
 	views.Layout(views.LayoutParams{
-		Title:        folderName,
-		ManifestJSON: buildManifestJSON(notes),
-		Tree:         buildTree(s.store.NotebookPath(), notes, ""),
-		Tags:         tags,
-		ContentCol:   views.FolderContentCol(breadcrumbs, folderName, entries),
+		Title:         folderName,
+		ManifestJSON:  buildManifestJSON(notes),
+		Tree:          buildTree(s.store.NotebookPath(), notes, ""),
+		Tags:          tags,
+		ContentCol:    views.FolderContentCol(breadcrumbs, folderName, entries),
+		CalendarYear:  calYear,
+		CalendarMonth: calMonth,
+		ActiveDays:    activeDays,
 	}).Render(r.Context(), w)
 }

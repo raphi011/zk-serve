@@ -221,6 +221,79 @@ func TestFolderHTMXReturnsPartial(t *testing.T) {
 	}
 }
 
+func TestCalendarRendersMonth(t *testing.T) {
+	stub := &stubStore{
+		notes:        testNotes,
+		tags:         testTags,
+		activeDays:   map[int]bool{5: true, 19: true},
+		notebookPath: t.TempDir(),
+	}
+	srv, err := server.New(stub)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	req := httptest.NewRequest("GET", "/calendar?year=2026&month=4", nil)
+	w := httptest.NewRecorder()
+	srv.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `id="calendar"`) {
+		t.Error("expected #calendar in response")
+	}
+	if !strings.Contains(body, "April 2026") {
+		t.Error("expected month label 'April 2026'")
+	}
+}
+
+func TestCalendarDefaultsToCurrentMonth(t *testing.T) {
+	stub := &stubStore{
+		notes:        testNotes,
+		tags:         testTags,
+		activeDays:   map[int]bool{},
+		notebookPath: t.TempDir(),
+	}
+	srv, err := server.New(stub)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	req := httptest.NewRequest("GET", "/calendar", nil)
+	w := httptest.NewRecorder()
+	srv.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), `id="calendar"`) {
+		t.Error("expected #calendar in response")
+	}
+}
+
+func TestSearchByDate(t *testing.T) {
+	stub := &stubStore{
+		notes:        testNotes,
+		tags:         testTags,
+		notebookPath: t.TempDir(),
+	}
+	srv, err := server.New(stub)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	req := httptest.NewRequest("GET", "/search?date=2024-01-15", nil)
+	w := httptest.NewRecorder()
+	srv.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Go Concurrency") {
+		t.Error("expected note title in date search results")
+	}
+	if strings.Contains(body, "<html") {
+		t.Error("date search must not include full page layout")
+	}
+}
+
 func TestStaticAssetsServed(t *testing.T) {
 	h := newTestServer(t, nil, nil)
 	for _, path := range []string{"/static/style.css", "/static/htmx.min.js", "/static/mermaid.min.js"} {

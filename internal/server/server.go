@@ -75,6 +75,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 	s.mux.HandleFunc("GET /", s.handleIndex)
 	s.mux.HandleFunc("GET /search", s.handleSearch)
+	s.mux.HandleFunc("GET /calendar", s.handleCalendar)
 	s.mux.HandleFunc("GET /tags", s.handleTags)
 	s.mux.HandleFunc("GET /note/{path...}", s.handleNote)
 	s.mux.HandleFunc("GET /folder/{path...}", s.handleFolder)

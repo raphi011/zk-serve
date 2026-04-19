@@ -16,6 +16,9 @@ type LayoutParams struct {
 	Headings      []render.Heading
 	OutgoingLinks []zk.Link
 	Backlinks     []zk.Link
+	CalendarYear  int
+	CalendarMonth int
+	ActiveDays    map[int]bool
 }
 
 templ Layout(p LayoutParams) {
@@ -55,7 +58,7 @@ templ Layout(p LayoutParams) {
 			<div id="main">
 				@p.ContentCol
 				<div class="resize-handle" id="toc-resize"></div>
-				@TOCPanel(p.Headings, p.OutgoingLinks, p.Backlinks, false)
+				@TOCPanel(p.Headings, p.OutgoingLinks, p.Backlinks, false, p.CalendarYear, p.CalendarMonth, p.ActiveDays)
 			</div>
 		</div>
 		<dialog id="cmd-dialog">
