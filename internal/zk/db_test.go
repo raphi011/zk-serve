@@ -64,6 +64,82 @@ func TestAllNotes(t *testing.T) {
 	}
 }
 
+func TestOutgoingLinks(t *testing.T) {
+	skipIfNoDB(t)
+	db, err := zk.OpenDB(testDBPath, testNotebookPath)
+	if err != nil {
+		t.Fatalf("OpenDB: %v", err)
+	}
+	defer db.Close()
+
+	// machine-learning.md has a wiki-link to go-concurrency.
+	links, err := db.OutgoingLinks("notes/ai/machine-learning.md")
+	if err != nil {
+		t.Fatalf("OutgoingLinks: %v", err)
+	}
+	if len(links) == 0 {
+		t.Fatal("expected at least 1 outgoing link from machine-learning.md")
+	}
+
+	var found bool
+	for _, l := range links {
+		if l.TargetPath == "notes/go-concurrency.md" {
+			found = true
+			if l.IsExternal {
+				t.Error("wiki-link should not be external")
+			}
+		}
+	}
+	if !found {
+		t.Errorf("expected link to notes/go-concurrency.md, got %+v", links)
+	}
+}
+
+func TestBacklinks(t *testing.T) {
+	skipIfNoDB(t)
+	db, err := zk.OpenDB(testDBPath, testNotebookPath)
+	if err != nil {
+		t.Fatalf("OpenDB: %v", err)
+	}
+	defer db.Close()
+
+	// go-concurrency.md is linked to by machine-learning.md.
+	links, err := db.Backlinks("notes/go-concurrency.md")
+	if err != nil {
+		t.Fatalf("Backlinks: %v", err)
+	}
+	if len(links) == 0 {
+		t.Fatal("expected at least 1 backlink to go-concurrency.md")
+	}
+
+	var found bool
+	for _, l := range links {
+		if l.SourcePath == "notes/ai/machine-learning.md" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected backlink from machine-learning.md, got %+v", links)
+	}
+}
+
+func TestBacklinksEmpty(t *testing.T) {
+	skipIfNoDB(t)
+	db, err := zk.OpenDB(testDBPath, testNotebookPath)
+	if err != nil {
+		t.Fatalf("OpenDB: %v", err)
+	}
+	defer db.Close()
+
+	links, err := db.Backlinks("notes/databases.md")
+	if err != nil {
+		t.Fatalf("Backlinks: %v", err)
+	}
+	if len(links) != 0 {
+		t.Errorf("expected 0 backlinks for databases.md, got %d", len(links))
+	}
+}
+
 func TestAllTags(t *testing.T) {
 	skipIfNoDB(t)
 	db, err := zk.OpenDB(testDBPath, testNotebookPath)
