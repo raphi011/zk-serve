@@ -1,20 +1,19 @@
 {{define "tree-node"}}
 {{if .IsDir}}
-<li class="tree__dir">
-  <details{{if .IsOpen}} open{{end}}>
-    <summary class="tree__dir-name">{{.Name}}</summary>
-    <ul class="tree__children">
-      {{range .Children}}{{template "tree-node" .}}{{end}}
-    </ul>
-  </details>
-</li>
+<details{{if .IsOpen}} open{{end}}>
+  <summary class="tree-folder"><span class="tree-chevron">▸</span>{{.Name}}</summary>
+  <div class="tree-children">
+    {{range .Children}}{{template "tree-node" .}}{{end}}
+  </div>
+</details>
 {{else}}
-<li class="tree__file{{if .IsActive}} active{{end}}">
-  <a class="tree__link" href="/note/{{.Path}}">{{.Name}}</a>
-</li>
+<a class="tree-item{{if .IsActive}} active{{end}}" href="/note/{{.Path}}">
+  <span class="tree-file-dot"></span>{{.Name}}
+</a>
 {{end}}
 {{end}}
 
 {{define "tree"}}
+<div class="sidebar-section-label">Notes</div>
 {{range .Tree}}{{template "tree-node" .}}{{end}}
 {{end}}

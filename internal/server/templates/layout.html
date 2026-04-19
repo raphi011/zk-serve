@@ -6,128 +6,73 @@
   <title>{{if .Title}}{{.Title}} — zk{{else}}zk{{end}}</title>
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="stylesheet" href="/static/chroma.css" />
-  <script>
-    (function() {
-      var stored = localStorage.getItem('zk-theme');
-      var pref = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-      document.documentElement.setAttribute('data-theme', pref);
-    })();
-  </script>
+  <script>(function(){var s=localStorage.getItem('zk-theme');var p=s||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',p)})();</script>
 </head>
 <body>
-
-<header class="topbar">
-  <button class="btn-icon btn-hamburger" id="hamburger" aria-label="Toggle sidebar">☰</button>
-  <a class="topbar__brand" href="/">zk</a>
-  <div class="topbar__spacer"></div>
-  <div class="topbar__search">
-    <span class="htmx-indicator" id="search-indicator">…</span>
-    <input
-      type="search"
-      name="q"
-      placeholder="Search notes…"
-      autocomplete="off"
-      hx-get="/search"
-      hx-trigger="input changed delay:300ms, search"
-      hx-target="#note-list"
-      hx-include="[name='tags']"
-      hx-indicator="#search-indicator"
-      value="{{.Query}}"
-    />
-  </div>
-  <button class="btn-icon" id="theme-toggle" aria-label="Toggle theme">
-    <span id="theme-icon">☾</span>
-  </button>
+<div id="progress-bar"></div>
+<header id="topbar">
+  <button id="mob-menu-btn" aria-label="Menu">☰</button>
+  <a id="logo" href="/"><span class="logo-dot"></span><strong>zk</strong></a>
+  <div id="topbar-spacer"></div>
+  <button id="cmd-trigger" type="button"><span>Go to file, search…</span><kbd>⌘K</kbd></button>
+  <button id="theme-toggle" type="button" aria-label="Toggle theme"><span id="theme-icon">☾</span></button>
 </header>
-
-<div class="layout">
-  <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-  <nav class="sidebar" id="sidebar">
-    <p class="sidebar__section-title sidebar__section-title--reset"
-       hx-get="/search"
-       hx-trigger="click"
-       hx-vals='{"q": "", "tags": ""}'
-       hx-target="#note-list"
-       hx-on:click="document.querySelector('[name=tags]').value=''"
-       title="Back to folder view">Notes</p>
-    <input type="hidden" name="tags" value="{{.ActiveTag}}" />
-    <ul class="note-list" id="note-list">
-      {{if .Tree}}
-        {{template "tree" .}}
-      {{else}}
-        {{template "list" .}}
-      {{end}}
-    </ul>
-
-    <hr class="sidebar__divider" />
-
-    <p class="sidebar__section-title">Tags</p>
-    <ul class="tag-list">
-      {{range .Tags}}
-      <li class="tag-list__item{{if $.IsActiveTag .Name}} active{{end}}"
-          hx-get="/search"
-          hx-trigger="click"
-          hx-vals='{"tags": "{{.Name}}", "q": "{{$.Query}}"}'
-          hx-target="#note-list">
-        <span class="tag-list__name">{{.Name}}</span>
-        <span class="tag-list__count">{{.NoteCount}}</span>
-      </li>
-      {{end}}
-    </ul>
+<div id="sidebar-backdrop"></div>
+<div id="layout">
+  <nav id="sidebar">
+    <div id="sidebar-search"><input type="text" id="sidebar-filter" placeholder="Filter notes…" autocomplete="off" /></div>
+    <div id="active-filters"></div>
+    <div id="sidebar-inner">
+      {{if .Tree}}<div class="server-tree">{{template "tree" .}}</div>{{end}}
+      <div class="server-tree" id="sidebar-tags">
+        <p class="sidebar-section-label">Tags</p>
+        <div class="tags-list">
+          {{range .Tags}}<span class="tag-pill" data-tag="{{.Name}}">{{.Name}} <span class="tag-count">{{.NoteCount}}</span></span>{{end}}
+        </div>
+      </div>
+    </div>
   </nav>
-
-  <main class="content" id="content">
-    {{if or .NoteHTML .FolderName}}
-    <nav class="breadcrumb">
-      <a class="breadcrumb__item" href="/">~</a>
-      {{range .Breadcrumbs}}<span class="breadcrumb__sep">/</span><a class="breadcrumb__item" href="/folder/{{.FolderPath}}">{{.Name}}</a>{{end}}<span class="breadcrumb__sep">/</span>{{if .CurrentNote}}<span class="breadcrumb__current">{{if .CurrentNote.Title}}{{.CurrentNote.Title}}{{else}}{{.CurrentNote.FilenameStem}}{{end}}</span>{{else}}<span class="breadcrumb__current">{{.FolderName}}</span>{{end}}
-    </nav>
-    {{end}}
+  <div class="resize-handle" id="sidebar-resize"></div>
+  <div id="main">
+    <div id="content-col">
+      {{if or .NoteHTML .FolderName}}
+      <nav id="breadcrumb">
+        <a class="bc-seg" href="/">~</a>
+        {{range .Breadcrumbs}}<span class="bc-sep">/</span><a class="bc-seg" href="/folder/{{.FolderPath}}">{{.Name}}</a>{{end}}
+        <span class="bc-sep">/</span>
+        <span class="bc-seg current">{{if .CurrentNote}}{{if .CurrentNote.Title}}{{.CurrentNote.Title}}{{else}}{{.CurrentNote.FilenameStem}}{{end}}{{else}}{{.FolderName}}{{end}}</span>
+      </nav>
+      {{end}}
+      <div id="content-area">
+        {{if .NoteHTML}}{{template "note" .}}
+        {{else if .FolderName}}{{template "folder" .}}
+        {{else}}<div class="content-empty">Select a note to read it.</div>
+        {{end}}
+      </div>
+    </div>
     {{if .NoteHTML}}
-      {{template "note" .}}
-    {{else if .FolderName}}
-      {{template "folder" .}}
-    {{else}}
-      <div class="content--empty">Select a note to read it.</div>
+    <div class="resize-handle" id="toc-resize"></div>
+    {{template "toc" .}}
     {{end}}
-  </main>
+  </div>
 </div>
-
-<script>
-  var toggleBtn = document.getElementById('theme-toggle');
-  var themeIcon = document.getElementById('theme-icon');
-
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    themeIcon.textContent = theme === 'dark' ? '☾' : '☀';
-    localStorage.setItem('zk-theme', theme);
-  }
-  applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
-  toggleBtn.addEventListener('click', function() {
-    var current = document.documentElement.getAttribute('data-theme');
-    applyTheme(current === 'dark' ? 'light' : 'dark');
-  });
-
-  var hamburger = document.getElementById('hamburger');
-  var sidebar = document.getElementById('sidebar');
-  var overlay = document.getElementById('sidebar-overlay');
-  function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('open'); }
-  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
-  hamburger.addEventListener('click', function() {
-    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
-  });
-  overlay.addEventListener('click', closeSidebar);
-
-  document.addEventListener('htmx:afterSwap', function() {
-    if (window.mermaid) mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
-  });
-</script>
-<script src="/static/htmx.min.js"></script>
+<dialog id="cmd-dialog">
+  <div id="cmd-box">
+    <div id="cmd-input-row">
+      <span class="cmd-icon-search">⌘</span>
+      <input id="cmd-input" type="text" placeholder="Go to file, search notes…" autocomplete="off" />
+    </div>
+    <div id="cmd-results"></div>
+    <div id="cmd-footer">
+      <span class="cmd-hint"><kbd>↑↓</kbd> navigate</span>
+      <span class="cmd-hint"><kbd>↵</kbd> open</span>
+      <span class="cmd-hint"><kbd>esc</kbd> close</span>
+    </div>
+  </div>
+</dialog>
+<script>window.__ZK_MANIFEST = {{.ManifestJSON}};</script>
+<script type="module" src="/static/js/app.js"></script>
 <script src="/static/mermaid.min.js"></script>
-<script>
-  if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: 'dark' });
-  if (window.mermaid) mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
-</script>
+<script>if(window.mermaid){mermaid.initialize({startOnLoad:false,theme:'dark'});mermaid.run({nodes:document.querySelectorAll('.mermaid')});}</script>
 </body>
 </html>

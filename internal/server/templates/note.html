@@ -1,25 +1,33 @@
 {{define "note"}}
-<article>
-  <header class="note-header">
-    <h1 class="note-header__title">
-      {{if .CurrentNote.Title}}{{.CurrentNote.Title}}{{else}}{{.CurrentNote.FilenameStem}}{{end}}
-    </h1>
-    <div class="note-header__meta">
-      <span>Created: {{.CurrentNote.Created | fmtDate}}</span>
-      <span>Modified: {{.CurrentNote.Modified | fmtDate}}</span>
-      <span>{{.CurrentNote.WordCount}} words</span>
-      {{range .CurrentNote.Tags}}
-      <span class="note-header__tag"
-            hx-get="/search"
-            hx-trigger="click"
-            hx-vals='{"tags": "{{.}}", "q": ""}'
-            hx-target="#note-list">{{.}}</span>
-      {{end}}
+<details id="mob-toc-details" class="mob-toc">
+  <summary class="mob-toc-toggle">On this page</summary>
+  <div class="mob-toc-body">
+    {{if .CurrentNote.Tags}}
+    <div class="mob-tags-row">
+      {{range .CurrentNote.Tags}}<a class="toc-tag-pill" href="/?tags={{.}}">{{.}}</a>{{end}}
     </div>
-    <hr class="note-header__divider" />
-  </header>
-  <div class="prose">
-    {{.NoteHTML}}
+    {{end}}
+    {{range .Headings}}<a class="toc-item{{if eq .Level 3}} h3{{end}}" href="#{{.ID}}">{{.Text}}</a>{{end}}
   </div>
+</details>
+<article id="article">
+  <h1 id="article-title">{{if .CurrentNote.Title}}{{.CurrentNote.Title}}{{else}}{{.CurrentNote.FilenameStem}}{{end}}</h1>
+  <div class="article-meta">
+    <span class="article-meta-text">Created: {{.CurrentNote.Created | fmtDate}} · Modified: {{.CurrentNote.Modified | fmtDate}} · {{.CurrentNote.WordCount}} words</span>
+    {{range .CurrentNote.Tags}}<a class="meta-tag" href="/?tags={{.}}">{{.}}</a>{{end}}
+  </div>
+  <hr class="article-divider" />
+  <div class="prose">{{.NoteHTML}}</div>
+  {{if .Backlinks}}
+  <section id="backlinks-section">
+    <h4>Referenced by</h4>
+    {{range .Backlinks}}
+    <a class="backlink-card" href="/note/{{.SourcePath}}">
+      <span class="backlink-card-title">{{.SourceTitle}}</span>
+      {{if .SourceTags}}<span class="backlink-card-tags">{{range .SourceTags}}<span class="backlink-tag">{{.}}</span>{{end}}</span>{{end}}
+    </a>
+    {{end}}
+  </section>
+  {{end}}
 </article>
 {{end}}

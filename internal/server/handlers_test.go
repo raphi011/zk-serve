@@ -127,9 +127,6 @@ func TestNoteHandlerNotFound(t *testing.T) {
 }
 
 func TestNoteHandlerIncludesManifest(t *testing.T) {
-	// TODO: This test will pass once templates emit {{.ManifestJSON}} (Task 6).
-	t.Skip("templates do not yet render ManifestJSON")
-
 	dir := t.TempDir()
 	notePath := dir + "/test-note.md"
 	if err := os.WriteFile(notePath, []byte("## Section\n\nContent.\n"), 0o644); err != nil {

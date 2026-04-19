@@ -1,0 +1,33 @@
+{{define "toc"}}
+<aside id="toc-panel">
+  <div id="toc-header"><span>On this page</span></div>
+  {{if .CurrentNote.Tags}}
+  <div id="toc-tags">
+    {{range .CurrentNote.Tags}}<a class="toc-tag-pill" href="/?tags={{.}}">{{.}}</a>{{end}}
+  </div>
+  {{end}}
+  <div id="toc-inner">
+    {{range .Headings}}<a class="toc-item{{if eq .Level 3}} h3{{end}}" href="#{{.ID}}">{{.Text}}</a>{{end}}
+  </div>
+  {{if .OutgoingLinks}}
+  <details class="toc-links-section">
+    <summary class="toc-links-label">Links <span class="tl-count">{{len .OutgoingLinks}}</span></summary>
+    <div class="toc-links-body">
+      {{range .OutgoingLinks}}
+      {{if .IsExternal}}<a class="toc-link-item toc-link-out" href="{{.Href}}" target="_blank" rel="noopener">{{if .TargetTitle}}{{.TargetTitle}}{{else}}{{.Href}}{{end}}</a>
+      {{else}}<a class="toc-link-item toc-link-out" href="/note/{{.TargetPath}}">{{if .TargetTitle}}{{.TargetTitle}}{{else}}{{.Href}}{{end}}</a>
+      {{end}}
+      {{end}}
+    </div>
+  </details>
+  {{end}}
+  {{if .Backlinks}}
+  <details class="toc-links-section">
+    <summary class="toc-links-label">Backlinks <span class="tl-count">{{len .Backlinks}}</span></summary>
+    <div class="toc-links-body">
+      {{range .Backlinks}}<a class="toc-link-item toc-link-in" href="/note/{{.SourcePath}}">{{.SourceTitle}}</a>{{end}}
+    </div>
+  </details>
+  {{end}}
+</aside>
+{{end}}

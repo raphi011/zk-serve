@@ -1,27 +1,19 @@
 {{define "folder"}}
-<article class="folder-view">
-  <header class="note-header">
-    <h1 class="note-header__title folder-view__title">{{.FolderName}}<span class="folder-view__slash">/</span></h1>
-    <hr class="note-header__divider" />
-  </header>
+<article id="article">
+  <h1>{{.FolderName}}<span style="color:var(--text-faint)">/</span></h1>
+  <hr class="article-divider" />
   {{if .FolderEntries}}
-  <ul class="folder-view__list">
+  <ul class="folder-list">
     {{range .FolderEntries}}
-    <li class="folder-view__item{{if .IsDir}} folder-view__item--dir{{end}}">
-      {{if .IsDir}}
-      <a class="folder-view__link" href="/folder/{{.Path}}">
-        <span class="folder-view__icon">▸</span>{{.Name}}/
-      </a>
-      {{else}}
-      <a class="folder-view__link" href="/note/{{.Path}}">
-        <span class="folder-view__icon">◦</span>{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}
-      </a>
+    <li class="folder-entry">
+      {{if .IsDir}}<a class="folder-link folder-link--dir" href="/folder/{{.Path}}"><span class="folder-icon">▸</span>{{.Name}}/</a>
+      {{else}}<a class="folder-link" href="/note/{{.Path}}"><span class="folder-icon">◦</span>{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}</a>
       {{end}}
     </li>
     {{end}}
   </ul>
   {{else}}
-  <p class="folder-view__empty">Empty folder.</p>
+  <p class="folder-empty">Empty folder.</p>
   {{end}}
 </article>
 {{end}}
