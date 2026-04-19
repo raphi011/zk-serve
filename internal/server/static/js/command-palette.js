@@ -43,7 +43,8 @@ export function initCommandPalette() {
       const focused = els[focusIdx];
       if (focused?.dataset.href) {
         dialog.close();
-        window.location.href = focused.dataset.href;
+        htmx.ajax('GET', focused.dataset.href, { target: '#content-col', swap: 'outerHTML' });
+        history.pushState({}, '', focused.dataset.href);
       }
     }
   });
@@ -52,7 +53,8 @@ export function initCommandPalette() {
     const item = e.target.closest('.cmd-item');
     if (item?.dataset.href) {
       dialog.close();
-      window.location.href = item.dataset.href;
+      htmx.ajax('GET', item.dataset.href, { target: '#content-col', swap: 'outerHTML' });
+      history.pushState({}, '', item.dataset.href);
     }
   });
 }
