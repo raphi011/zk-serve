@@ -297,6 +297,7 @@ a { text-decoration: none; color: inherit; }
 
   #sidebar-inner {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 8px 0;
     scrollbar-width: thin;
@@ -436,7 +437,6 @@ details[open] > .tree-folder > .tree-chevron {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  max-height: var(--tags-height, 150px);
   min-height: 0;
 
   .sidebar-section-label {
