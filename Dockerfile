@@ -1,7 +1,8 @@
 # ── Stage 1: build zk-serve ──────────────────────────────────────────────────
 FROM golang:1.26-alpine AS builder
 
-RUN apk add --no-cache curl
+# nodejs/npm for bundling JS with esbuild
+RUN apk add --no-cache curl nodejs npm
 
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -9,11 +10,12 @@ RUN go mod download
 
 COPY . .
 
-# Download embedded JS assets and compile a static, stripped binary.
+# Download dependencies and bundle assets
 RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js \
       -o internal/server/static/htmx.min.js && \
     curl -fsSL https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js \
-      -o internal/server/static/mermaid.min.js
+      -o internal/server/static/mermaid.min.js && \
+    npx esbuild internal/server/static/js/app.js --bundle --minify --format=iife --outfile=internal/server/static/app.min.js
 
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /bin/zk-serve ./cmd/zk-serve
 
