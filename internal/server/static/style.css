@@ -113,12 +113,12 @@ a { text-decoration: none; color: inherit; }
 /* ── Topbar ────────────────────────────────────────────────── */
 
 #topbar {
-  height: var(--topbar-height);
+  min-height: var(--topbar-height);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 12px;
+  padding: env(safe-area-inset-top) calc(12px + env(safe-area-inset-right)) 0 calc(12px + env(safe-area-inset-left));
   gap: 10px;
   flex-shrink: 0;
   z-index: 100;
@@ -1422,7 +1422,7 @@ a.backlink-card, .backlink-card {
 
   #sidebar {
     position: fixed;
-    top: var(--topbar-height);
+    top: calc(var(--topbar-height) + env(safe-area-inset-top));
     left: 0;
     bottom: 0;
     width: 280px !important;
