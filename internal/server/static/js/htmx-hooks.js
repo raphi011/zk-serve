@@ -7,6 +7,12 @@ export function initHTMXHooks() {
   document.body.addEventListener('htmx:afterSettle', (e) => {
     if (e.detail.target.id !== 'content-col') return;
 
+    // Close mobile drawer after navigation.
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('mob-open');
+    if (backdrop) backdrop.classList.remove('mob-open');
+
     // 1. Update tree active state + record visit.
     updateTreeActive();
 

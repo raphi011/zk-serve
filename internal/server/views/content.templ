@@ -49,12 +49,8 @@ templ NoteArticle(note *zk.Note, noteHTML string, backlinks []zk.Link, headings 
 				for _, link := range backlinks {
 					@ContentLink("backlink-card", "/note/" + link.SourcePath) {
 						<span class="backlink-card-title">{ link.SourceTitle }</span>
-						if len(link.SourceTags) > 0 {
-							<span class="backlink-card-tags">
-								for _, tag := range link.SourceTags {
-									<span class="tag-pill">{ tag }</span>
-								}
-							</span>
+						if backlinkDir(link.SourcePath) != "" {
+							<span class="backlink-card-path"><span>{ backlinkDir(link.SourcePath) }</span></span>
 						}
 					}
 				}

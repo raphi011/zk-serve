@@ -210,11 +210,13 @@ a { text-decoration: none; color: inherit; }
 /* ── Sidebar backdrop (mobile) ─────────────────────────────── */
 
 #sidebar-backdrop {
-  display: none;
   position: fixed;
   inset: 0;
   background: oklch(0.15 0.01 70 / 0.5);
   z-index: 199;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s;
 }
 
 /* ── Layout ────────────────────────────────────────────────── */
@@ -934,14 +936,17 @@ a.backlink-card, .backlink-card {
     text-overflow: ellipsis;
   }
 
-  .backlink-card-tags {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-  }
+  .backlink-card-path {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl;
+    flex-shrink: 1;
+    min-width: 0;
 
-  .tag-pill {
-    flex-shrink: 0;
+    > span { unicode-bidi: embed; direction: ltr; }
   }
 }
 
@@ -1425,17 +1430,16 @@ a.backlink-card, .backlink-card {
     top: calc(var(--topbar-height) + env(safe-area-inset-top));
     left: 0;
     bottom: 0;
-    width: 280px !important;
+    width: 100% !important;
     z-index: 200;
-    transform: translateX(-100%);
-    transition: transform 0.22s ease;
-    box-shadow: 4px 0 20px oklch(0.15 0.02 70 / 0.15);
-    border-right: 1px solid var(--border);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s;
 
-    &.mob-open { transform: translateX(0); }
+    &.mob-open { opacity: 1; visibility: visible; }
   }
 
-  #sidebar-backdrop.mob-open { display: block; }
+  #sidebar-backdrop.mob-open { opacity: 1; visibility: visible; }
 
   .resize-handle { display: none; }
   #toc-panel { display: none; }

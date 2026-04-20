@@ -242,17 +242,44 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
                 return
         }
 
+        // Serve index.md if it exists at the notebook root.
+        if note := s.cache.notesByPath["index.md"]; note != nil {
+                s.renderNote(w, r, note)
+                return
+        }
+
+        // Build root directory listing from cached notes.
+        seen := map[string]bool{}
+        var entries []model.FolderEntry
+        for _, n := range s.cache.notes {
+                parts := strings.SplitN(n.Path, "/", 2)
+                if len(parts) == 1 {
+                        entries = append(entries, model.FolderEntry{Name: parts[0], Path: n.Path, Title: n.Title})
+                } else if !seen[parts[0]] {
+                        seen[parts[0]] = true
+                        entries = append(entries, model.FolderEntry{Name: parts[0], Path: parts[0], IsDir: true})
+                }
+        }
+        sort.Slice(entries, func(i, j int) bool {
+                if entries[i].IsDir != entries[j].IsDir {
+                        return entries[i].IsDir
+                }
+                return strings.ToLower(entries[i].Name) < strings.ToLower(entries[j].Name)
+        })
+
+        contentCol := views.FolderContentCol(nil, "Notebook", entries)
         w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
         if isHTMX(r) {
-                views.EmptyContentCol().Render(r.Context(), w)
+                contentCol.Render(r.Context(), w)
                 s.renderTOC(w, r, nil, nil, nil)
                 return
         }
 
         s.renderFullPage(w, r, views.LayoutParams{
+                Title:      "Notebook",
                 Tree:       buildTree(s.cache.notes, ""),
-                ContentCol: views.EmptyContentCol(),
+                ContentCol: contentCol,
         })
 }
 
