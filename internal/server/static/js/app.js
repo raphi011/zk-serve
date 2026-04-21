@@ -6,6 +6,7 @@ import { initCommandPalette } from './command-palette.js';
 import { initHTMXHooks } from './htmx-hooks.js';
 import { initCalendar } from './calendar.js';
 import { initKeys } from './keys.js';
+import { initZen } from './zen.js';
 import { recordVisit } from './history.js';
 
 initTheme();
@@ -16,6 +17,7 @@ initCommandPalette();
 initHTMXHooks();
 initCalendar();
 initKeys();
+initZen();
 
 // Record initial page load if it's a note.
 if (location.pathname.startsWith('/note/')) {

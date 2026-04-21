@@ -205,6 +205,24 @@ a { text-decoration: none; color: inherit; }
 
     &:hover { color: var(--accent); border-color: var(--accent); }
   }
+
+  #zen-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    height: 28px;
+    width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+    transition: color 0.15s, border-color 0.15s;
+
+    &:hover { color: var(--accent); border-color: var(--accent); }
+  }
 }
 
 /* ── Sidebar backdrop (mobile) ─────────────────────────────── */
@@ -220,6 +238,16 @@ a { text-decoration: none; color: inherit; }
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s ease, visibility 0.2s;
+}
+
+/* ── Zen mode ─────────────────────────────────────────────── */
+
+body.zen {
+  --sidebar-width: 0px !important;
+  --toc-width: 0px !important;
+
+  #sidebar, #toc-panel { overflow: hidden; }
+  .resize-handle { display: none; }
 }
 
 /* ── Layout ────────────────────────────────────────────────── */
@@ -286,6 +314,7 @@ a { text-decoration: none; color: inherit; }
 
 #sidebar {
   width: var(--sidebar-width);
+  transition: width 0.25s ease;
   background: var(--surface);
   display: flex;
   flex-direction: column;
@@ -960,6 +989,7 @@ a.backlink-card, .backlink-card {
 #toc-panel {
   width: var(--toc-width);
   flex-shrink: 0;
+  transition: width 0.25s ease;
   background: var(--surface);
   display: flex;
   flex-direction: column;
@@ -1429,6 +1459,7 @@ a.backlink-card, .backlink-card {
     #mob-menu-btn { display: flex; align-items: center; }
     #cmd-trigger { min-width: 0; flex: 1; font-size: 12px; }
   }
+  #zen-toggle { display: none; }
 
   #sidebar {
     position: fixed;

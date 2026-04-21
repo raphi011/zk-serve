@@ -37,7 +37,7 @@ templ Layout(p LayoutParams) {
 		<link rel="stylesheet" href="/static/style.css"/>
 		<link rel="stylesheet" href="/static/chroma.css"/>
 		<script>
-			(function(){var d=document.documentElement,s=d.style;var t=localStorage.getItem('zk-theme');d.setAttribute('data-theme',t||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));var sw=localStorage.getItem('zk-sidebar-width');if(sw)s.setProperty('--sidebar-width',sw+'px');var tw=localStorage.getItem('zk-toc-panel-width');if(tw)s.setProperty('--toc-width',tw+'px')})();
+			(function(){var d=document.documentElement,s=d.style;var t=localStorage.getItem('zk-theme');d.setAttribute('data-theme',t||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));var sw=localStorage.getItem('zk-sidebar-width');if(sw)s.setProperty('--sidebar-width',sw+'px');var tw=localStorage.getItem('zk-toc-panel-width');if(tw)s.setProperty('--toc-width',tw+'px');if(localStorage.getItem('zk-zen')==='1')document.body.classList.add('zen')})();
 		</script>
 	</head>
 	<body hx-indicator="#nav-loader">
@@ -48,6 +48,7 @@ templ Layout(p LayoutParams) {
 			<a id="logo" href="/"><span class="logo-dot"></span><strong>zk</strong></a>
 			<div id="topbar-spacer"></div>
 			<button id="cmd-trigger" type="button"><span>Go to file, search…</span><kbd>⌘K</kbd></button>
+			<button id="zen-toggle" type="button" aria-label="Toggle zen mode" title="Toggle zen mode">⊡</button>
 			<button id="theme-toggle" type="button" aria-label="Toggle theme"><span id="theme-icon">☾</span></button>
 		</header>
 		<div id="sidebar-backdrop"></div>
