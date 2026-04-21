@@ -54,6 +54,17 @@ export function initSidebar() {
       sidebar.classList.remove('mob-open');
       backdrop.classList.remove('mob-open');
     });
+
+    // Tap topbar while drawer is open → scroll file tree to top.
+    const topbar = document.getElementById('topbar');
+    const inner = document.getElementById('sidebar-inner');
+    if (topbar && inner) {
+      topbar.addEventListener('click', (e) => {
+        if (!sidebar.classList.contains('mob-open')) return;
+        if (e.target.closest('button, a')) return;
+        inner.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
   }
 }
 
